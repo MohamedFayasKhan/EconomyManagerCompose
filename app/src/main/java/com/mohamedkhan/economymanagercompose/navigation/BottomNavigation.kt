@@ -8,6 +8,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -19,24 +20,29 @@ import com.mohamedkhan.economymanagercompose.screen.HomeScreen
 import com.mohamedkhan.economymanagercompose.screen.PartyScreen
 import com.mohamedkhan.economymanagercompose.screen.ProfileScreen
 import com.mohamedkhan.economymanagercompose.screen.TransactionScreen
+import com.mohamedkhan.economymanagercompose.signin.GoogleAuthClient
 
 @Composable
-fun BottomNavigationGraph(navHostController: NavHostController) {
+fun BottomNavigationGraph(
+    navHostController: NavHostController,
+    googleAuthClient: GoogleAuthClient,
+    lifecycleScope: LifecycleCoroutineScope
+) {
     NavHost(navController = navHostController, startDestination = Screen.HomeScreen.route){
         composable(route= Screen.HomeScreen.route){
-            HomeScreen()
+            HomeScreen(googleAuthClient)
         }
         composable(route= Screen.TransactionScreen.route){
-            TransactionScreen()
+            TransactionScreen(googleAuthClient)
         }
         composable(route= Screen.BankScreen.route){
-            BankScreen()
+            BankScreen(googleAuthClient)
         }
         composable(route= Screen.PartyScreen.route){
-            PartyScreen()
+            PartyScreen(googleAuthClient)
         }
         composable(route= Screen.ProfileScreen.route){
-            ProfileScreen()
+            ProfileScreen(googleAuthClient= googleAuthClient, lifecycleScope)
         }
 
     }
