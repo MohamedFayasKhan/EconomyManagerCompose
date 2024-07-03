@@ -21,25 +21,27 @@ import com.mohamedkhan.economymanagercompose.screen.PartyScreen
 import com.mohamedkhan.economymanagercompose.screen.ProfileScreen
 import com.mohamedkhan.economymanagercompose.screen.TransactionScreen
 import com.mohamedkhan.economymanagercompose.signin.GoogleAuthClient
+import com.mohamedkhan.economymanagercompose.viewModel.DataViewModel
 
 @Composable
 fun BottomNavigationGraph(
     navHostController: NavHostController,
     googleAuthClient: GoogleAuthClient,
-    lifecycleScope: LifecycleCoroutineScope
+    lifecycleScope: LifecycleCoroutineScope,
+    viewModel: DataViewModel
 ) {
     NavHost(navController = navHostController, startDestination = Screen.HomeScreen.route){
         composable(route= Screen.HomeScreen.route){
             HomeScreen(googleAuthClient)
         }
         composable(route= Screen.TransactionScreen.route){
-            TransactionScreen(googleAuthClient)
+            TransactionScreen(googleAuthClient, viewModel)
         }
         composable(route= Screen.BankScreen.route){
-            BankScreen(googleAuthClient)
+            BankScreen(googleAuthClient, viewModel)
         }
         composable(route= Screen.PartyScreen.route){
-            PartyScreen(googleAuthClient)
+            PartyScreen(googleAuthClient, viewModel)
         }
         composable(route= Screen.ProfileScreen.route){
             ProfileScreen(googleAuthClient= googleAuthClient, lifecycleScope)
