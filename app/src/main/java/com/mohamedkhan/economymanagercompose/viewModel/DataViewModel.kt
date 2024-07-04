@@ -50,6 +50,7 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val fetcher = object : DataFetcher<Transaction> {
                 override fun getDataFromFireBase(list: List<Transaction>) {
+                    Collections.reverse(list)
                     _transactionLiveData.value = list
                 }
 
