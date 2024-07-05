@@ -4,7 +4,7 @@ data class Bank(
     val id: String,
     val name: String,
     val number: String,
-    val balance: String,
+    var balance: String,
     val isActive: Boolean
 ) {
     constructor() : this(null.toString(), null.toString(), null.toString(), null.toString(), false)
@@ -14,7 +14,7 @@ data class Party(
     val id: String,
     val name: String,
     val number: String,
-    val balance: String,
+    var balance: String,
     val isActive: Boolean,
     val receivable: Boolean
 ) {
@@ -22,6 +22,13 @@ data class Party(
 }
 
 data class Category(
+    val id: String,
+    val name: String
+) {
+    constructor(): this(null.toString(), null.toString())
+}
+
+data class Type(
     val id: String,
     val name: String
 ) {
@@ -42,3 +49,8 @@ data class Transaction(
 ){
     constructor(): this(null.toString(),null.toString(),null.toString(),null.toString(),null.toString(),null.toString(),null.toString(),null.toString(),null.toString(),false)
 }
+
+data class ToggleSwitch(
+    val text: String,
+    var isChecked: Boolean
+)

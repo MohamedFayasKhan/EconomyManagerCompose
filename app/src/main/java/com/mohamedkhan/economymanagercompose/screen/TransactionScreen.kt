@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -20,21 +21,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Observer
-import com.mohamedkhan.economymanagercompose.MainActivity
-import com.mohamedkhan.economymanagercompose.constant.Constant
+import androidx.navigation.NavHostController
+import com.mohamedkhan.economymanagercompose.route.Router
 import com.mohamedkhan.economymanagercompose.signin.GoogleAuthClient
 import com.mohamedkhan.economymanagercompose.viewModel.DataViewModel
 
 @Composable
 fun TransactionScreen(
     googleAuthClient: GoogleAuthClient,
-    viewModel: DataViewModel
+    viewModel: DataViewModel,
+    navHostController: NavHostController
 ) {
     Box(modifier = Modifier
         .fillMaxSize()) {
         Column {
-            HeaderTransactionComponent(googleAuthClient)
+            HeaderTransactionComponent(googleAuthClient, navHostController)
             SearchBoxTransaction()
             TransactionsLazyList(viewModel)
         }
@@ -66,7 +67,10 @@ fun SearchBoxTransaction() {
 }
 
 @Composable
-fun HeaderTransactionComponent(googleAuthClient: GoogleAuthClient) {
+fun HeaderTransactionComponent(
+    googleAuthClient: GoogleAuthClient,
+    navHostController: NavHostController
+) {
     val name = googleAuthClient.getSignedInUser()?.displayName
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -76,8 +80,8 @@ fun HeaderTransactionComponent(googleAuthClient: GoogleAuthClient) {
             Text(text = name + "'s")
             Text(text = "Cash Book")
         }
-        Icon(imageVector = Icons.Filled.Add, contentDescription = "add", modifier = Modifier.clickable {
-
+        Icon(imageVector = Icons.Filled.Add, contentDescription = "add", modifier = Modifier.size(50.dp).clickable {
+            navHostController.navigate(Router.AddTransaction.route)
         })
     }
 }

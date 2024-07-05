@@ -1,20 +1,21 @@
 package com.mohamedkhan.economymanagercompose.viewModel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.mohamedkhan.economymanagercompose.constant.Constant
 import com.mohamedkhan.economymanagercompose.database.Bank
+import com.mohamedkhan.economymanagercompose.database.Category
 import com.mohamedkhan.economymanagercompose.database.DataFetcher
 import com.mohamedkhan.economymanagercompose.database.DataRepository
 import com.mohamedkhan.economymanagercompose.database.Database
 import com.mohamedkhan.economymanagercompose.database.Party
 import com.mohamedkhan.economymanagercompose.database.Transaction
+import com.mohamedkhan.economymanagercompose.database.Type
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.util.Collections
 
@@ -32,16 +33,35 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
     private val _banksLiveData = MutableLiveData<List<Bank>>()
     val bankLiveData: LiveData<List<Bank>> get() = _banksLiveData
 
+    private val _categoryLiveData = MutableLiveData<List<Category>>()
+    val categoryLiveData: LiveData<List<Category>> get() = _categoryLiveData
+
+    private val _typeLiveData = MutableLiveData<List<Type>>()
+    val typeLiveData: LiveData<List<Type>> get() = _typeLiveData
+
     fun initDatabase(uid: String?) {
         val database = uid?.let { Database.getDataBase().child(it).child(Constant.DATAS) }
         repository = DataRepository(database)
+        _typeLiveData.value = listOf<Type>(
+            Type(Constant.SPENT,Constant.SPENT_VALUE),
+            Type(Constant.BANK_TO_BANK,Constant.BANK_TO_BANK_VALUE),
+            Type(Constant.BANK_TO_PARTY,Constant.BANK_TO_PARTY_VALUE),
+//            Type(Constant.PARTY_TO_PARTY,Constant.PARTY_TO_PARTY_VALUE),
+            Type(Constant.PARTY_TO_BANK,Constant.PARTY_TO_BANK_VALUE),
+            Type(Constant.PARTY_TO_BANK,Constant.PARTY_TO_BANK_VALUE),
+            Type(Constant.ADD_BALANCE_TO_BANK,Constant.ADD_BALANCE_TO_BANK_VALUE),
+            Type(Constant.REDUCE_BALANCE_FROM_BANK,Constant.REDUCE_BALANCE_FROM_BANK_VALUE),
+            Type(Constant.ADD_BALANCE_TO_PARTY,Constant.ADD_BALANCE_TO_PARTY_VALUE),
+            Type(Constant.REDUCE_BALANCE_FROM_PARTY,Constant.REDUCE_BALANCE_FROM_PARTY_VALUE)
+        )
     }
 
     fun performTasks(onComplete: () -> Unit) {
         viewModelScope.launch {
-            readTransactions()
+            readCategories()
             readParties()
             readBanks()
+            readTransactions()
             onComplete()
         }
     }
@@ -92,5 +112,39 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
             }
             repository.readBanks(fetcher)
         }
+    }
+
+    fun readCategories(){
+        viewModelScope.launch(Dispatchers.IO) {
+            val fetcher = object : DataFetcher<Category> {
+                override fun getDataFromFireBase(list: List<Category>) {
+                    _categoryLiveData.value = list
+                }
+
+                override fun getSingleData(data: Category) {
+                    TODO("Not yet implemented")
+                }
+
+            }
+            repository.readCategories(fetcher)
+        }
+    }
+
+    fun getUniqueDatabaseId(): String? {
+        return repository.getUniqueDatabaseId()
+    }
+
+    fun getTimestamp(): String {
+        return repository.getTimestamp()
+    }
+
+    fun addTransaction(transaction: Transaction, context: Context, checked: Boolean, isTransactionCompleted: (Boolean) -> Unit) {
+        repository.addTransaction(context, transaction, categoryLiveData, partiesLiveData, bankLiveData, checked) {
+            isTransactionCompleted(it)
+        }
+    }
+
+    fun addCategory(category: String): String {
+        return repository.upsertCategory(category)
     }
 }

@@ -27,7 +27,7 @@ fun InitialLoading(
     LaunchedEffect(Unit) {
         viewModel.performTasks {
             navHostController.navigate(Router.Main.route) {
-                popUpTo(navHostController.graph.startDestinationId)
+                popUpTo(Router.Main.route)
                 launchSingleTop = true
             }
         }

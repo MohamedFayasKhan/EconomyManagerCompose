@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -21,6 +22,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.mohamedkhan.economymanagercompose.route.Router
 import com.mohamedkhan.economymanagercompose.signin.GoogleAuthClient
 import com.mohamedkhan.economymanagercompose.viewModel.DataViewModel
 
@@ -67,11 +69,7 @@ fun HeaderBankComponent(googleAuthClient: GoogleAuthClient) {
             Text(text = name + "'s")
             Text(text = "Bank Accounts")
         }
-        Icon(
-            imageVector = Icons.Filled.Add,
-            contentDescription = "add",
-            modifier = Modifier.clickable {
-
-            })
+        Icon(imageVector = Icons.Filled.Add, contentDescription = "add", modifier = Modifier.size(50.dp).clickable {
+        })
     }
 }

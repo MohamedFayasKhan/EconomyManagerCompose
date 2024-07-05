@@ -3,7 +3,7 @@
 
     <style name="Theme.EconomySplashTheme" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/white</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/dollar_logo</item>
         <item name="postSplashScreenTheme">@style/Theme.EconomyManagerCompose</item>
     </style>
 

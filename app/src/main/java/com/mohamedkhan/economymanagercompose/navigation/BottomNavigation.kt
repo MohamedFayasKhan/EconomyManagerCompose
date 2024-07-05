@@ -28,14 +28,15 @@ fun BottomNavigationGraph(
     navHostController: NavHostController,
     googleAuthClient: GoogleAuthClient,
     lifecycleScope: LifecycleCoroutineScope,
-    viewModel: DataViewModel
+    viewModel: DataViewModel,
+    navControllerMainActivity: NavHostController
 ) {
     NavHost(navController = navHostController, startDestination = Screen.HomeScreen.route){
         composable(route= Screen.HomeScreen.route){
             HomeScreen(googleAuthClient)
         }
         composable(route= Screen.TransactionScreen.route){
-            TransactionScreen(googleAuthClient, viewModel)
+            TransactionScreen(googleAuthClient, viewModel, navControllerMainActivity)
         }
         composable(route= Screen.BankScreen.route){
             BankScreen(googleAuthClient, viewModel)
