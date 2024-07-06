@@ -86,7 +86,7 @@ fun BottomBar(navHostController: NavHostController) {
 
                         }
                     },
-                    alwaysShowLabel = false,
+                    alwaysShowLabel = true,
                     label = {
                         Text(text = screen.title)
                     }

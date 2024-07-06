@@ -1,5 +1,7 @@
 package com.mohamedkhan.economymanagercompose.screen
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,9 +11,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
@@ -19,9 +23,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.mohamedkhan.economymanagercompose.R
+import com.mohamedkhan.economymanagercompose.constant.Constant
 import com.mohamedkhan.economymanagercompose.route.Router
 import com.mohamedkhan.economymanagercompose.signin.GoogleAuthClient
 import com.mohamedkhan.economymanagercompose.viewModel.DataViewModel
@@ -32,8 +44,10 @@ fun TransactionScreen(
     viewModel: DataViewModel,
     navHostController: NavHostController
 ) {
-    Box(modifier = Modifier
-        .fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
         Column {
             HeaderTransactionComponent(googleAuthClient, navHostController)
             SearchBoxTransaction()
@@ -45,16 +59,59 @@ fun TransactionScreen(
 @Composable
 fun TransactionsLazyList(viewModel: DataViewModel) {
     val transactions by viewModel.transactionLiveData.observeAsState(emptyList())
+    var transactionDate = ""
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(transactions) {transition->
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Column() {
-                    Text(text = transition.subject)
-                    Text(text = transition.timeStamp)
+        items(transactions) { transition ->
+            if (transactionDate == "" || transactionDate != transition.timeStamp.split(" ")[0]) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(modifier = Modifier.size(2.dp).background(Color.Gray).weight(0.5f))
+                    Text(
+                        text = transition.timeStamp.split(" ")[0],
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(start = 5.dp, end = 5.dp)
+                    )
+                    Spacer(modifier = Modifier.size(2.dp).background(Color.Gray).weight(0.5f))
+                    transactionDate = transition.timeStamp.split(" ")[0]
                 }
-                Column {
-                    Text(text = transition.amount)
-                    Text(text = if (transition.income) "Receive" else "Sent")
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.Gray)
+                        .size(50.dp)
+                ) {
+                    Image(
+                        painter = if (transition.type == Constant.BANK_TO_BANK) {
+                            painterResource(id = R.drawable.transfer)
+                        } else if (transition.income) {
+                            painterResource(id = R.drawable.arrow_income)
+                        } else {
+                            painterResource(id = R.drawable.arrow_expense)
+                        },
+                        contentDescription = "Rounded Corner Image",
+                        modifier = Modifier.size(25.dp)
+                    )
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 10.dp),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(text = transition.subject, fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold)
+                    Text(text = transition.timeStamp, fontSize = 10.sp)
+                }
+                Column(verticalArrangement = Arrangement.Center) {
+                    Text(text = transition.amount, fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 10.dp))
                 }
             }
         }
@@ -80,8 +137,10 @@ fun HeaderTransactionComponent(
             Text(text = name + "'s")
             Text(text = "Cash Book")
         }
-        Icon(imageVector = Icons.Filled.Add, contentDescription = "add", modifier = Modifier.size(50.dp).clickable {
-            navHostController.navigate(Router.AddTransaction.route)
-        })
+        Icon(imageVector = Icons.Filled.Add, contentDescription = "add", modifier = Modifier
+            .size(50.dp)
+            .clickable {
+                navHostController.navigate(Router.AddTransaction.route)
+            })
     }
 }
