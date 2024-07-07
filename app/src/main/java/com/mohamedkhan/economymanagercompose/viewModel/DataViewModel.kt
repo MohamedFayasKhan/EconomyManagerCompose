@@ -48,7 +48,6 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
             Type(Constant.BANK_TO_PARTY,Constant.BANK_TO_PARTY_VALUE),
 //            Type(Constant.PARTY_TO_PARTY,Constant.PARTY_TO_PARTY_VALUE),
             Type(Constant.PARTY_TO_BANK,Constant.PARTY_TO_BANK_VALUE),
-            Type(Constant.PARTY_TO_BANK,Constant.PARTY_TO_BANK_VALUE),
             Type(Constant.ADD_BALANCE_TO_BANK,Constant.ADD_BALANCE_TO_BANK_VALUE),
             Type(Constant.REDUCE_BALANCE_FROM_BANK,Constant.REDUCE_BALANCE_FROM_BANK_VALUE),
             Type(Constant.ADD_BALANCE_TO_PARTY,Constant.ADD_BALANCE_TO_PARTY_VALUE),
@@ -146,5 +145,13 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
 
     fun addCategory(category: String): String {
         return repository.upsertCategory(category)
+    }
+
+    fun addBank(bank: Bank) {
+        repository.upsertAccount(bank)
+    }
+
+    fun addParty(party: Party) {
+        repository.upsertParty(party)
     }
 }
