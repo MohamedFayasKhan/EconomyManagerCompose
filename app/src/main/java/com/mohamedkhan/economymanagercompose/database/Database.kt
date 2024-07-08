@@ -2,6 +2,7 @@ package com.mohamedkhan.economymanagercompose.database
 
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.mohamedkhan.economymanagercompose.constant.Constant
 
 class Database {
 
@@ -15,7 +16,7 @@ class Database {
                 return tempInstance
             }
             synchronized(this) {
-                val fbInstance = FirebaseDatabase.getInstance().reference.child("Data")
+                val fbInstance = FirebaseDatabase.getInstance().reference.child(Constant.DATA)
                 INSTANCE= fbInstance
                 return fbInstance
             }
