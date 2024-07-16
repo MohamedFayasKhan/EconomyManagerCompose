@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.EconomySplashTheme" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/white</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/dollar_logo</item>
-        <item name="postSplashScreenTheme">@style/Theme.EconomyManagerCompose</item>
+    <style name="Theme.EconomyManagerCompose" parent="android:Theme.Material.Light.NoActionBar" >
+        <item name="android:windowIsTranslucent">true</item>
     </style>
-
-    <style name="Theme.EconomyManagerCompose" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

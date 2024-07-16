@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -23,6 +24,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -30,32 +32,43 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.mohamedkhan.economymanagercompose.R
 import com.mohamedkhan.economymanagercompose.database.Bank
 import com.mohamedkhan.economymanagercompose.signin.GoogleAuthClient
 import com.mohamedkhan.economymanagercompose.viewModel.DataViewModel
 
 @Composable
 fun BankScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
+    val filterList = remember {
+        mutableStateOf<List<Bank>?>(emptyList())
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .padding(16.dp)
     ) {
         Column {
             HeaderBankComponent(googleAuthClient, viewModel)
-            SearchBoxBank()
-            BanksLazyList(viewModel)
+            SearchBoxBank(filterList, viewModel)
+            BanksLazyList(filterList, viewModel)
         }
     }
 }
 
 @Composable
-fun BanksLazyList(viewModel: DataViewModel) {
+fun BanksLazyList(filterList: MutableState<List<Bank>?>, viewModel: DataViewModel) {
     val banks by viewModel.bankLiveData.observeAsState(emptyList())
+    val list = if (filterList.value != null && filterList.value!!.size > 0) {
+        filterList.value as List<Bank>
+    } else {
+        banks
+    }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(banks.sortedBy { it.name }) { bank ->
+        items(list.sortedBy { it.name }) { bank ->
             Card(
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
@@ -93,8 +106,29 @@ fun BanksLazyList(viewModel: DataViewModel) {
 }
 
 @Composable
-fun SearchBoxBank() {
-    Spacer(modifier = Modifier.height(32.dp))
+fun SearchBoxBank(filterList: MutableState<List<Bank>?>, viewModel: DataViewModel) {
+    var searchText by remember {
+        mutableStateOf("")
+    }
+    OutlinedTextField(
+        value = searchText,
+        onValueChange = { text ->
+            searchText = text
+            filterList.value = viewModel.bankLiveData.value?.filter {bank ->
+                bank.name.lowercase().contains(searchText) ||
+                        bank.number.contains(searchText) ||
+                        bank.balance.contains(searchText)
+            }
+
+        },
+        label = {
+                Text(text = stringResource(id = R.string.search))
+        },
+        leadingIcon = {
+            Icon(imageVector = Icons.Filled.Search, contentDescription = stringResource(R.string.search))
+        },
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
 @Composable

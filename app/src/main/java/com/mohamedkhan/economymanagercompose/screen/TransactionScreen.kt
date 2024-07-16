@@ -1,5 +1,7 @@
 package com.mohamedkhan.economymanagercompose.screen
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,7 +12,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,10 +19,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -31,7 +36,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,16 +55,20 @@ import com.mohamedkhan.economymanagercompose.viewModel.DataViewModel
 fun TransactionScreen(
     googleAuthClient: GoogleAuthClient,
     viewModel: DataViewModel,
-    navHostController: NavHostController
+    navHostControllerMainActivity: NavHostController
 ) {
+    val filterList = remember {
+        mutableStateOf<List<Transaction>?>(emptyList())
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .padding(16.dp)
     ) {
         Column {
-            HeaderTransactionComponent(googleAuthClient, navHostController)
-            SearchBoxTransaction()
-            TransactionsLazyList(viewModel)
+            HeaderTransactionComponent(googleAuthClient, navHostControllerMainActivity)
+            SearchBoxTransaction(filterList, viewModel)
+            TransactionsLazyList(filterList, viewModel)
         }
     }
 }
@@ -68,6 +79,8 @@ private fun TransactionDetail(
     transaction: Transaction,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
+    var transferData: String? = null
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
@@ -80,20 +93,33 @@ private fun TransactionDetail(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                Spacer(modifier = Modifier.size(5.dp))
+                Text(
+                    text = transaction.subject,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.size(16.dp))
                 Text(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     text =
                     when (transaction.type) {
                         Constant.SPENT -> {
+
                             val from =
                                 viewModel.bankLiveData.value?.filter { transaction.from == it.id }
+                            transferData = "Paid from " + from?.get(0)?.name
                             "Paid from " + from?.get(0)?.name
                         }
 
                         Constant.BANK_TO_BANK -> {
-                            val from = viewModel.bankLiveData.value?.filter { transaction.from == it.id }
-                            val to = viewModel.bankLiveData.value?.filter { transaction.to == it.id }
+                            val from =
+                                viewModel.bankLiveData.value?.filter { transaction.from == it.id }
+                            val to =
+                                viewModel.bankLiveData.value?.filter { transaction.to == it.id }
+                            transferData =
+                                "Transfer from " + from?.get(0)?.name + " to " + to?.get(0)?.name
                             "Transfer from " + from?.get(0)?.name + " to " + to?.get(0)?.name
                         }
 
@@ -102,36 +128,43 @@ private fun TransactionDetail(
                                 viewModel.bankLiveData.value?.filter { transaction.from == it.id }
                             val to =
                                 viewModel.partiesLiveData.value?.filter { transaction.to == it.id }
+                            transferData =
+                                "Sent from " + from?.get(0)?.name + " to " + to?.get(0)?.name
                             "Sent from " + from?.get(0)?.name + " to " + to?.get(0)?.name
                         }
 
                         Constant.PARTY_TO_BANK -> {
                             val to =
                                 viewModel.bankLiveData.value?.filter { transaction.to == it.id }
+                            transferData = "Credited to " + to?.get(0)?.name
                             "Credited to " + to?.get(0)?.name
                         }
 
                         Constant.ADD_BALANCE_TO_BANK -> {
                             val to =
                                 viewModel.bankLiveData.value?.filter { transaction.to == it.id }
+                            transferData = "Credited to " + to?.get(0)?.name
                             "Credited to " + to?.get(0)?.name
                         }
 
                         Constant.REDUCE_BALANCE_FROM_BANK -> {
                             val from =
                                 viewModel.bankLiveData.value?.filter { transaction.from == it.id }
+                            transferData = "Debited from " + from?.get(0)?.name
                             "Debited from " + from?.get(0)?.name
                         }
 
                         Constant.ADD_BALANCE_TO_PARTY -> {
                             val to =
                                 viewModel.partiesLiveData.value?.filter { transaction.to == it.id }
+                            transferData = "Added to " + to?.get(0)?.name
                             "Added to " + to?.get(0)?.name
                         }
 
                         Constant.REDUCE_BALANCE_FROM_PARTY -> {
                             val from =
                                 viewModel.partiesLiveData.value?.filter { transaction.from == it.id }
+                            transferData = "Reduced to " + from?.get(0)?.name
                             "Reduced to " + from?.get(0)?.name
                         }
 
@@ -170,55 +203,64 @@ private fun TransactionDetail(
                 Text(
                     text = transaction.id
                 )
-                Spacer(modifier = Modifier.size(30.dp))
+                Spacer(modifier = Modifier.size(5.dp))
+
+                Button(onClick = {
+                    shareTransaction(
+                        context,
+                        transaction,
+                        transferData,
+                        cat?.get(0)?.name.toString()
+                    )
+                }) {
+                    Text(text = "Share")
+                }
+                Spacer(modifier = Modifier.size(5.dp))
             }
         }
     }
 }
 
+private fun shareTransaction(
+    context: Context,
+    transaction: Transaction,
+    transferData: String?,
+    category: String
+) {
+    val text =
+        "Transaction Detail\n\nSubject: ${transaction.subject}\nAmount: ${transaction.amount}\nCategory: ${category}\nDate: ${transaction.date}\n${transferData ?: ""}"
+    val intent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_TEXT, text)
+        type = "text/plain"
+    }
+    val shareIntent = Intent.createChooser(intent, null)
+    context.startActivity(shareIntent)
+}
+
 @Composable
-fun TransactionsLazyList(viewModel: DataViewModel) {
+fun TransactionsLazyList(filterList: MutableState<List<Transaction>?>, viewModel: DataViewModel) {
     var showDialog by remember { mutableStateOf(false) }
     val transactions by viewModel.transactionLiveData.observeAsState(emptyList())
     var selectedItem by remember { mutableStateOf(Transaction()) }
-    var transactionDate = ""
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(transactions) { transaction ->
+        val list = if (filterList.value != null && filterList.value!!.isNotEmpty()) {
+            filterList.value as List<Transaction>
+        } else {
+            transactions
+        }
+
+        items(list) { transaction ->
             Box(
                 modifier = Modifier.clickable {
                     showDialog = true
                     selectedItem = transaction
                 }
             ) {
-                if (transactionDate == "" || transactionDate != transaction.timeStamp.split(" ")[0]) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(bottom = 10.dp)
-                    ) {
-                        Spacer(
-                            modifier = Modifier
-                                .size(2.dp)
-                                .background(Color.Gray)
-                                .weight(0.5f)
-                        )
-                        Text(
-                            text = transaction.timeStamp.split(" ")[0],
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(start = 5.dp, end = 5.dp)
-                        )
-                        Spacer(
-                            modifier = Modifier
-                                .size(2.dp)
-                                .background(Color.Gray)
-                                .weight(0.5f)
-                        )
-                        transactionDate = transaction.timeStamp.split(" ")[0]
-                    }
-                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 10.dp)
+                        .padding(top = 20.dp)
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
@@ -271,14 +313,35 @@ fun TransactionsLazyList(viewModel: DataViewModel) {
 }
 
 @Composable
-fun SearchBoxTransaction() {
-    Spacer(modifier = Modifier.height(32.dp))
+fun SearchBoxTransaction(filterList: MutableState<List<Transaction>?>, viewModel: DataViewModel) {
+    var searchText by remember {
+        mutableStateOf("")
+    }
+    OutlinedTextField(
+        value = searchText,
+        onValueChange = { text ->
+            searchText = text
+            filterList.value = viewModel.transactionLiveData.value?.filter {transaction ->
+                transaction.subject.lowercase().contains(searchText.lowercase()) ||
+                        transaction.amount.lowercase().contains(searchText.lowercase()) ||
+                        transaction.category.lowercase().contains(searchText.lowercase())
+            }
+
+        },
+        leadingIcon = {
+            Icon(imageVector = Icons.Filled.Search, contentDescription = stringResource(R.string.search))
+        },
+        modifier = Modifier.fillMaxWidth(),
+        label = {
+            Text(text = stringResource(id = R.string.search))
+        },
+    )
 }
 
 @Composable
 fun HeaderTransactionComponent(
     googleAuthClient: GoogleAuthClient,
-    navHostController: NavHostController
+    navHostControllerMainActivity: NavHostController
 ) {
     val name = googleAuthClient.getSignedInUser()?.displayName
     Row(
@@ -286,13 +349,13 @@ fun HeaderTransactionComponent(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            Text(text = name + "'s")
+            Text(text = "$name's")
             Text(text = "Cash Book")
         }
         Icon(imageVector = Icons.Filled.Add, contentDescription = "add", modifier = Modifier
             .size(50.dp)
             .clickable {
-                navHostController.navigate(Router.AddTransaction.route)
+                navHostControllerMainActivity.navigate(Router.AddTransaction.route)
             })
     }
 }
