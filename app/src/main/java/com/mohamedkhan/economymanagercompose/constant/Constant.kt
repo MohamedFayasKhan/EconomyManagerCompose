@@ -42,6 +42,7 @@ class Constant {
 
         val SPENT = "SPENT"
         val SPENT_VALUE = "Spent"
+        val PROFILE = "Profile"
     }
 
 

@@ -13,6 +13,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.mohamedkhan.economymanagercompose.R
+import com.mohamedkhan.economymanagercompose.constant.Constant
 import com.mohamedkhan.economymanagercompose.database.Database
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.cancellation.CancellationException
@@ -107,7 +108,7 @@ class GoogleAuthClient(
             "userId" to uid,
             "name" to displayName
         )
-        database.setValue(data)
+        database.child(Constant.PROFILE).setValue(data)
         Toast.makeText(context, "User data created successfully", Toast.LENGTH_LONG).show()
     }
 
