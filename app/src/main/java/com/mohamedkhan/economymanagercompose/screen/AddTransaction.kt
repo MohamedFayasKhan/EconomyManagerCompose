@@ -35,12 +35,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LiveData
 import androidx.navigation.NavHostController
-import com.mohamedkhan.economymanagercompose.R
 import com.mohamedkhan.economymanagercompose.constant.Constant
 import com.mohamedkhan.economymanagercompose.database.Bank
 import com.mohamedkhan.economymanagercompose.database.Category
@@ -697,7 +695,7 @@ fun TextFieldAddCategory(category: MutableState<String>) {
 fun TextFieldDate(date: MutableState<String>) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
-    val dateFormat = SimpleDateFormat(stringResource(R.string.dd_mmm_yyyy), Locale.getDefault())
+    val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.getDefault())
     val datePickerDialog = DatePickerDialog(
         context,
         { _, year, month, dayOfMonth ->

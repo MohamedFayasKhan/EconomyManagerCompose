@@ -111,7 +111,7 @@ class DataRepository(private val database: DatabaseReference?) {
 
     fun getTimestamp(): String {
         val current = Date()
-        val formatter = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
+        val formatter = SimpleDateFormat(Constant.TIMESTAMP_FORMAT, Locale.getDefault())
         return formatter.format(current)
     }
 
@@ -393,5 +393,9 @@ class DataRepository(private val database: DatabaseReference?) {
         val textWidthInDp = textWidthInPixels / (density.toFloat() / 160)
 
         return textWidthInDp.dp
+    }
+
+    fun updateTransactionDate(id: String, date: String) {
+        database?.child(Constant.TRANSACTION_PATH)?.child(id)?.child("date")?.setValue(date)
     }
 }

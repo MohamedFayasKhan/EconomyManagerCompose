@@ -45,28 +45,6 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
     private val _expenseLiveData = MutableLiveData<String>()
     val expenseLiveData: LiveData<String> get() = _expenseLiveData
 
-    fun calculateIncome() {
-        val incomeData = _transactionLiveData.value?.filter { it.income }
-        var value: Double = 0.0
-        if (!incomeData.isNullOrEmpty()) {
-            for (data in incomeData) {
-                value += data.amount.toDouble()
-            }
-        }
-        _incomeLiveData.value = value.toString()
-    }
-
-    fun calculateExpense() {
-        val expenseData = _transactionLiveData.value?.filter { !it.income }
-        var value: Double = 0.0
-        if (!expenseData.isNullOrEmpty()) {
-            for (data in expenseData) {
-                value += data.amount.toDouble()
-            }
-        }
-        _expenseLiveData.value = value.toString()
-    }
-
     fun initDatabase(uid: String?) {
         val database = uid?.let { Database.getDataBase().child(it).child(Constant.DATAS) }
         repository = DataRepository(database)
@@ -202,5 +180,27 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
             }
             onComplete(data)
         }
+    }
+
+    fun calculateIncome() {
+        val incomeData = _transactionLiveData.value?.filter { it.income && it.type != Constant.BANK_TO_BANK }
+        var value: Double = 0.0
+        if (!incomeData.isNullOrEmpty()) {
+            for (data in incomeData) {
+                value += data.amount.toDouble()
+            }
+        }
+        _incomeLiveData.value = value.toString()
+    }
+
+    fun calculateExpense() {
+        val expenseData = _transactionLiveData.value?.filter { !it.income }
+        var value: Double = 0.0
+        if (!expenseData.isNullOrEmpty()) {
+            for (data in expenseData) {
+                value += data.amount.toDouble()
+            }
+        }
+        _expenseLiveData.value = value.toString()
     }
 }
