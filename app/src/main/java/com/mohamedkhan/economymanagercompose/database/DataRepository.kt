@@ -1,7 +1,10 @@
 package com.mohamedkhan.economymanagercompose.database
 
 import android.content.Context
+import android.graphics.Paint
 import android.widget.Toast
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LiveData
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -374,5 +377,21 @@ class DataRepository(private val database: DatabaseReference?) {
         val key = database?.child(Constant.CATEGORY_PATH)?.push()?.key
         database?.child(Constant.CATEGORY_PATH)?.child(key.toString())?.setValue(Category(key.toString(), category))
         return key.toString()
+    }
+
+    fun getCategoryLength(text: String): Dp {
+        val paint = Paint()
+        val textSizeInSp = 16f
+        val density = 160 // Assuming mdpi (160dpi) as the baseline density
+
+        // Convert sp to pixels
+        val textSizeInPx = textSizeInSp * density / 160
+        paint.textSize = textSizeInPx
+        // Measure the text width in pixels
+        val textWidthInPixels = paint.measureText(text)
+        // Convert pixels to dp
+        val textWidthInDp = textWidthInPixels / (density.toFloat() / 160)
+
+        return textWidthInDp.dp
     }
 }

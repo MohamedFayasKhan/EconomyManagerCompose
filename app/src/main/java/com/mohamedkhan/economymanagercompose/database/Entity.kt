@@ -1,5 +1,8 @@
 package com.mohamedkhan.economymanagercompose.database
 
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+
 data class Bank(
     val id: String,
     val name: String,
@@ -54,3 +57,11 @@ data class ToggleSwitch(
     val text: String,
     var isChecked: Boolean
 )
+
+data class CategoryData(
+    val name: String,
+    val amount: Double,
+    val length: Dp
+) {
+    constructor(): this(null.toString(), 0.0, 0.dp)
+}

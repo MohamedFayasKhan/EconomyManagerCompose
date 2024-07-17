@@ -14,10 +14,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleCoroutineScope
 import coil.compose.AsyncImage
+import com.mohamedkhan.economymanagercompose.R
 import com.mohamedkhan.economymanagercompose.signin.GoogleAuthClient
 import com.mohamedkhan.economymanagercompose.signin.UserData
 import kotlinx.coroutines.launch
@@ -36,7 +38,7 @@ fun ProfileScreen(
         if (userData?.photoUrl != null) {
             AsyncImage(
                 model = userData.photoUrl,
-                contentDescription = "Profile picture",
+                contentDescription = stringResource(R.string.profile_picture),
                 modifier = Modifier
                     .size(150.dp)
                     .clip(CircleShape),
@@ -56,7 +58,7 @@ fun ProfileScreen(
                 googleAuthClient.signOut()
             }
         }) {
-            Text(text = "Sign out")
+            Text(text = stringResource(R.string.sign_out))
         }
     }
 }

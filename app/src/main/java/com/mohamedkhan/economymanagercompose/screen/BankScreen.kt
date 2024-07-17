@@ -116,8 +116,8 @@ fun SearchBoxBank(filterList: MutableState<List<Bank>?>, viewModel: DataViewMode
             searchText = text
             filterList.value = viewModel.bankLiveData.value?.filter {bank ->
                 bank.name.lowercase().contains(searchText) ||
-                        bank.number.contains(searchText) ||
-                        bank.balance.contains(searchText)
+                        bank.number.lowercase().contains(searchText) ||
+                        bank.balance.lowercase().contains(searchText)
             }
 
         },

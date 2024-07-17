@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.mohamedkhan.economymanagercompose.constant.Constant
 import com.mohamedkhan.economymanagercompose.database.Bank
 import com.mohamedkhan.economymanagercompose.database.Category
+import com.mohamedkhan.economymanagercompose.database.CategoryData
 import com.mohamedkhan.economymanagercompose.database.DataFetcher
 import com.mohamedkhan.economymanagercompose.database.DataRepository
 import com.mohamedkhan.economymanagercompose.database.Database
@@ -38,6 +39,33 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
 
     private val _typeLiveData = MutableLiveData<List<Type>>()
     val typeLiveData: LiveData<List<Type>> get() = _typeLiveData
+
+    private val _incomeLiveData = MutableLiveData<String>()
+    val incomeLiveData: LiveData<String> get() = _incomeLiveData
+    private val _expenseLiveData = MutableLiveData<String>()
+    val expenseLiveData: LiveData<String> get() = _expenseLiveData
+
+    fun calculateIncome() {
+        val incomeData = _transactionLiveData.value?.filter { it.income }
+        var value: Double = 0.0
+        if (!incomeData.isNullOrEmpty()) {
+            for (data in incomeData) {
+                value += data.amount.toDouble()
+            }
+        }
+        _incomeLiveData.value = value.toString()
+    }
+
+    fun calculateExpense() {
+        val expenseData = _transactionLiveData.value?.filter { !it.income }
+        var value: Double = 0.0
+        if (!expenseData.isNullOrEmpty()) {
+            for (data in expenseData) {
+                value += data.amount.toDouble()
+            }
+        }
+        _expenseLiveData.value = value.toString()
+    }
 
     fun initDatabase(uid: String?) {
         val database = uid?.let { Database.getDataBase().child(it).child(Constant.DATAS) }
@@ -71,6 +99,8 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
                 override fun getDataFromFireBase(list: List<Transaction>) {
                     Collections.reverse(list)
                     _transactionLiveData.value = list
+                    calculateIncome()
+                    calculateExpense()
                 }
 
                 override fun getSingleData(data: Transaction) {
@@ -153,5 +183,24 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
 
     fun addParty(party: Party) {
         repository.upsertParty(party)
+    }
+
+    fun getChartData(onComplete: (List<CategoryData>) -> Unit) {
+        viewModelScope.launch {
+            val data = mutableListOf<CategoryData>()
+            _categoryLiveData.value?.forEach { category->
+                val categoryTransaction = _transactionLiveData.value?.filter {transaction ->
+                    category.id == transaction.category
+                }
+                var amount: Double = 0.0
+                categoryTransaction?.forEach {
+                    amount += it.amount.toDouble()
+                }
+                if (!categoryTransaction.isNullOrEmpty()) {
+                    data.add(CategoryData(category.name, amount, repository.getCategoryLength(category.name)))
+                }
+            }
+            onComplete(data)
+        }
     }
 }

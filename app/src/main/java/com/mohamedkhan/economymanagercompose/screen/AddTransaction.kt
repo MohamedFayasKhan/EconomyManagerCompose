@@ -1,6 +1,7 @@
 package com.mohamedkhan.economymanagercompose.screen
 
 import android.app.DatePickerDialog
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -77,6 +78,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
         )
     }
     var isAddCategory = remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(
@@ -95,7 +97,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
                 viewModel.categoryLiveData,
                 "Category",
                 "Category",
-                onExpandedChange = { expandedCategory = !expandedCategory }) {typeVal, isAdd ->
+                onExpandedChange = { expandedCategory = !expandedCategory }) { typeVal, isAdd ->
                 isAddCategory.value = isAdd != null
             }
 
@@ -136,7 +138,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
                         viewModel.bankLiveData,
                         "Bank",
                         "From",
-                        { expandedFrom = !expandedFrom }) {typeVal, isAdd ->}
+                        { expandedFrom = !expandedFrom }) { typeVal, isAdd -> }
                     to.value = Constant.SPENT
                 }
 
@@ -148,7 +150,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
                         viewModel.bankLiveData,
                         "Bank",
                         "From",
-                        { expandedFrom = !expandedFrom }) {typeVal, isAdd ->}
+                        { expandedFrom = !expandedFrom }) { typeVal, isAdd -> }
                     DropDownCategory(
                         expandedTo,
                         to,
@@ -156,7 +158,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
                         viewModel.bankLiveData,
                         "Bank",
                         "To",
-                        { expandedTo = !expandedTo }) {typeVal, isAdd ->}
+                        { expandedTo = !expandedTo }) { typeVal, isAdd -> }
                 }
 
                 Constant.BANK_TO_PARTY -> {
@@ -167,7 +169,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
                         viewModel.bankLiveData,
                         "Bank",
                         "From",
-                        { expandedFrom = !expandedFrom }) {typeVal, isAdd ->}
+                        { expandedFrom = !expandedFrom }) { typeVal, isAdd -> }
                     DropDownCategory(
                         expandedTo,
                         to,
@@ -175,7 +177,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
                         viewModel.partiesLiveData,
                         "Party",
                         "To",
-                        { expandedTo = !expandedTo }) {typeVal, isAdd ->}
+                        { expandedTo = !expandedTo }) { typeVal, isAdd -> }
                 }
 
 //                Constant.PARTY_TO_PARTY -> {
@@ -205,7 +207,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
                         viewModel.partiesLiveData,
                         "Party",
                         "From",
-                        { expandedFrom = !expandedFrom }) {typeVal, isAdd ->}
+                        { expandedFrom = !expandedFrom }) { typeVal, isAdd -> }
                     DropDownCategory(
                         expandedTo,
                         to,
@@ -213,7 +215,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
                         viewModel.bankLiveData,
                         "Bank",
                         "To",
-                        { expandedTo = !expandedTo }) {typeVal, isAdd ->}
+                        { expandedTo = !expandedTo }) { typeVal, isAdd -> }
                 }
 
                 Constant.ADD_BALANCE_TO_BANK -> {
@@ -224,7 +226,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
                         viewModel.bankLiveData,
                         "Bank",
                         "To",
-                        { expandedTo = !expandedTo }) {typeVal, isAdd ->}
+                        { expandedTo = !expandedTo }) { typeVal, isAdd -> }
                     from.value = Constant.ADJUSTMENT
                 }
 
@@ -236,7 +238,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
                         viewModel.bankLiveData,
                         "Bank",
                         "From",
-                        { expandedFrom = !expandedFrom }) {typeVal, isAdd ->}
+                        { expandedFrom = !expandedFrom }) { typeVal, isAdd -> }
                     to.value = Constant.ADJUSTMENT
                 }
 
@@ -248,7 +250,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
                         viewModel.partiesLiveData,
                         "Party",
                         "To",
-                        { expandedTo = !expandedTo }) {typeVal, isAdd ->}
+                        { expandedTo = !expandedTo }) { typeVal, isAdd -> }
                     from.value = Constant.ADJUSTMENT
                 }
 
@@ -260,7 +262,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
                         viewModel.partiesLiveData,
                         "Party",
                         "From",
-                        { expandedFrom = !expandedFrom }) {typeVal, isAdd ->}
+                        { expandedFrom = !expandedFrom }) { typeVal, isAdd -> }
                     to.value = Constant.ADJUSTMENT
                 }
             }
@@ -283,9 +285,23 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
             LoanSwitch(loanSwitch = loanSwitch) {
                 loanSwitch = it
             }
-            AddButton(date, subject, amount, category, type, from, to, viewModel, loanSwitch, newCategoryValue.value) {
+
+            AddButton(
+                date,
+                subject,
+                amount,
+                category,
+                type,
+                from,
+                to,
+                viewModel,
+                loanSwitch,
+                newCategoryValue.value
+            ) {
                 if (it) {
                     navController.popBackStack()
+                } else {
+                    Toast.makeText(context, "Fill all details", Toast.LENGTH_LONG).show()
                 }
             }
 //            DropDownCategory(isTypeUpdated, expandedFrom, from, fromValue, viewModel.bankLiveData, "Bank", "From", onExpandedChange = { expandedFrom = !expandedFrom })
@@ -293,6 +309,8 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
         }
     }
 }
+
+private fun validate(value: MutableState<String>): Boolean = value.value != ""
 
 @Composable
 fun LoanSwitch(loanSwitch: ToggleSwitch, onSwitchChanged: (ToggleSwitch) -> Unit) {
@@ -339,160 +357,164 @@ fun AddButton(
     Button(
         modifier = Modifier.fillMaxWidth(),
         onClick = {
-            if (newCategory != "") {
-                category.value = viewModel.addCategory(newCategory)
-            }
-            var isCompleted = false
-            when (type.value) {
-                Constant.SPENT -> {
-                    val transaction = Transaction(
-                        viewModel.getUniqueDatabaseId().toString(),
-                        subject.value,
-                        amount.value,
-                        category.value,
-                        date.value,
-                        viewModel.getTimestamp(),
-                        type.value,
-                        from.value,
-                        to.value,
-                        false
-                    )
-                    viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
-                        isCompleted = it
-                    }
+            if (validate(date) && validate(subject) && validate(amount) && validate(category) && validate(type) && validate(from) && validate(to)) {
+                if (newCategory != "") {
+                    category.value = viewModel.addCategory(newCategory)
                 }
+                var isCompleted = false
+                when (type.value) {
+                    Constant.SPENT -> {
+                        val transaction = Transaction(
+                            viewModel.getUniqueDatabaseId().toString(),
+                            subject.value,
+                            amount.value,
+                            category.value,
+                            date.value,
+                            viewModel.getTimestamp(),
+                            type.value,
+                            from.value,
+                            to.value,
+                            false
+                        )
+                        viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
+                            isCompleted = it
+                        }
+                    }
 
-                Constant.BANK_TO_BANK -> {
-                    val transaction = Transaction(
-                        viewModel.getUniqueDatabaseId().toString(),
-                        subject.value,
-                        amount.value,
-                        category.value,
-                        date.value,
-                        viewModel.getTimestamp(),
-                        type.value,
-                        from.value,
-                        to.value,
-                        false
-                    )
-                    viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
-                        isCompleted = it
+                    Constant.BANK_TO_BANK -> {
+                        val transaction = Transaction(
+                            viewModel.getUniqueDatabaseId().toString(),
+                            subject.value,
+                            amount.value,
+                            category.value,
+                            date.value,
+                            viewModel.getTimestamp(),
+                            type.value,
+                            from.value,
+                            to.value,
+                            false
+                        )
+                        viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
+                            isCompleted = it
+                        }
                     }
-                }
 
-                Constant.ADD_BALANCE_TO_BANK -> {
-                    val transaction = Transaction(
-                        viewModel.getUniqueDatabaseId().toString(),
-                        subject.value,
-                        amount.value,
-                        category.value,
-                        date.value,
-                        viewModel.getTimestamp(),
-                        type.value,
-                        from.value,
-                        to.value,
-                        true
-                    )
-                    viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
-                        isCompleted = it
+                    Constant.ADD_BALANCE_TO_BANK -> {
+                        val transaction = Transaction(
+                            viewModel.getUniqueDatabaseId().toString(),
+                            subject.value,
+                            amount.value,
+                            category.value,
+                            date.value,
+                            viewModel.getTimestamp(),
+                            type.value,
+                            from.value,
+                            to.value,
+                            true
+                        )
+                        viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
+                            isCompleted = it
+                        }
                     }
-                }
 
-                Constant.REDUCE_BALANCE_FROM_BANK -> {
-                    val transaction = Transaction(
-                        viewModel.getUniqueDatabaseId().toString(),
-                        subject.value,
-                        amount.value,
-                        category.value,
-                        date.value,
-                        viewModel.getTimestamp(),
-                        type.value,
-                        from.value,
-                        to.value,
-                        false
-                    )
-                    viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
-                        isCompleted = it
+                    Constant.REDUCE_BALANCE_FROM_BANK -> {
+                        val transaction = Transaction(
+                            viewModel.getUniqueDatabaseId().toString(),
+                            subject.value,
+                            amount.value,
+                            category.value,
+                            date.value,
+                            viewModel.getTimestamp(),
+                            type.value,
+                            from.value,
+                            to.value,
+                            false
+                        )
+                        viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
+                            isCompleted = it
+                        }
                     }
-                }
 
-                Constant.BANK_TO_PARTY -> {
-                    val transaction = Transaction(
-                        viewModel.getUniqueDatabaseId().toString(),
-                        subject.value,
-                        amount.value,
-                        category.value,
-                        date.value,
-                        viewModel.getTimestamp(),
-                        type.value,
-                        from.value,
-                        to.value,
-                        false
-                    )
-                    viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
-                        isCompleted = it
+                    Constant.BANK_TO_PARTY -> {
+                        val transaction = Transaction(
+                            viewModel.getUniqueDatabaseId().toString(),
+                            subject.value,
+                            amount.value,
+                            category.value,
+                            date.value,
+                            viewModel.getTimestamp(),
+                            type.value,
+                            from.value,
+                            to.value,
+                            false
+                        )
+                        viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
+                            isCompleted = it
+                        }
                     }
-                }
 
 //            Constant.PARTY_TO_PARTY -> {
 //
 //            }
 
-                Constant.PARTY_TO_BANK -> {
-                    val transaction = Transaction(
-                        viewModel.getUniqueDatabaseId().toString(),
-                        subject.value,
-                        amount.value,
-                        category.value,
-                        date.value,
-                        viewModel.getTimestamp(),
-                        type.value,
-                        from.value,
-                        to.value,
-                        true
-                    )
-                    viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
-                        isCompleted = it
+                    Constant.PARTY_TO_BANK -> {
+                        val transaction = Transaction(
+                            viewModel.getUniqueDatabaseId().toString(),
+                            subject.value,
+                            amount.value,
+                            category.value,
+                            date.value,
+                            viewModel.getTimestamp(),
+                            type.value,
+                            from.value,
+                            to.value,
+                            true
+                        )
+                        viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
+                            isCompleted = it
+                        }
                     }
-                }
 
-                Constant.ADD_BALANCE_TO_PARTY -> {
-                    val transaction = Transaction(
-                        viewModel.getUniqueDatabaseId().toString(),
-                        subject.value,
-                        amount.value,
-                        category.value,
-                        date.value,
-                        viewModel.getTimestamp(),
-                        type.value,
-                        from.value,
-                        to.value,
-                        loanSwitch.isChecked
-                    )
-                    viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
-                        isCompleted = it
+                    Constant.ADD_BALANCE_TO_PARTY -> {
+                        val transaction = Transaction(
+                            viewModel.getUniqueDatabaseId().toString(),
+                            subject.value,
+                            amount.value,
+                            category.value,
+                            date.value,
+                            viewModel.getTimestamp(),
+                            type.value,
+                            from.value,
+                            to.value,
+                            loanSwitch.isChecked
+                        )
+                        viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
+                            isCompleted = it
+                        }
                     }
-                }
 
-                Constant.REDUCE_BALANCE_FROM_PARTY -> {
-                    val transaction = Transaction(
-                        viewModel.getUniqueDatabaseId().toString(),
-                        subject.value,
-                        amount.value,
-                        category.value,
-                        date.value,
-                        viewModel.getTimestamp(),
-                        type.value,
-                        from.value,
-                        to.value,
-                        !loanSwitch.isChecked
-                    )
-                    viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
-                        isCompleted = it
+                    Constant.REDUCE_BALANCE_FROM_PARTY -> {
+                        val transaction = Transaction(
+                            viewModel.getUniqueDatabaseId().toString(),
+                            subject.value,
+                            amount.value,
+                            category.value,
+                            date.value,
+                            viewModel.getTimestamp(),
+                            type.value,
+                            from.value,
+                            to.value,
+                            !loanSwitch.isChecked
+                        )
+                        viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
+                            isCompleted = it
+                        }
                     }
                 }
+                isTransactionCompleted(isCompleted)
+            } else {
+                isTransactionCompleted(false)
             }
-            isTransactionCompleted(isCompleted)
         }) {
         Text(text = "Add Transaction")
     }

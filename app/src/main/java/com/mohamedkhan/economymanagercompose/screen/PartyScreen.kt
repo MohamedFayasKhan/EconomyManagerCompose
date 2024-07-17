@@ -129,8 +129,8 @@ fun SearchBoxParty(filterList: MutableState<List<Party>?>, viewModel: DataViewMo
             searchText = text
             filterList.value = viewModel.partiesLiveData.value?.filter {party ->
                 party.name.lowercase().contains(searchText) ||
-                        party.number.contains(searchText) ||
-                        party.balance.contains(searchText)
+                        party.number.lowercase().contains(searchText) ||
+                        party.balance.lowercase().contains(searchText)
             }
 
         },

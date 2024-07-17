@@ -95,7 +95,9 @@ class MainActivity : ComponentActivity() {
                     }
                     composable(route = Router.Main.route) {
                         LaunchedEffect(Unit) {
-                            viewModel.performTasks {}
+                            viewModel.performTasks {
+
+                            }
                         }
                         MainScreen(
                             googleAuthClient = googleAuthClient,
