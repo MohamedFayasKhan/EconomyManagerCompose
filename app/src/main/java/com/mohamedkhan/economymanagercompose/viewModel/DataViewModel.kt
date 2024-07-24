@@ -83,9 +83,9 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
                 override fun getDataFromFireBase(list: List<Transaction>) {
                     Collections.reverse(list)
                     _transactionLiveData.value = list
-                    calculateIncome()
-                    calculateExpense()
                     viewModelScope.launch {
+                        calculateIncome()
+                        calculateExpense()
                         getChartData("Last 7 Days")
                     }
                 }
