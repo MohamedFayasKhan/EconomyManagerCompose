@@ -88,7 +88,7 @@ class GoogleAuthClient(
 
     private fun checkAndUpdateUserDatabase(uid: String, displayName: String?) {
         val databaseInstance = Database.getDataBase()
-        databaseInstance.addListenerForSingleValueEvent(object : ValueEventListener{
+        databaseInstance.child(uid).addListenerForSingleValueEvent(object : ValueEventListener{
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) {
                     createUserData(uid, displayName)
@@ -108,7 +108,7 @@ class GoogleAuthClient(
             "userId" to uid,
             "name" to displayName
         )
-        database.child(Constant.PROFILE).setValue(data)
+        database.child(uid).child(Constant.DATAS).child(Constant.PROFILE).setValue(data)
         Toast.makeText(context, "User data created successfully", Toast.LENGTH_LONG).show()
     }
 
