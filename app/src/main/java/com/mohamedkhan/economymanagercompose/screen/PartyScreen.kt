@@ -1,7 +1,9 @@
 package com.mohamedkhan.economymanagercompose.screen
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -39,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -66,6 +70,7 @@ fun PartyScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PartiesLazyList(filterList: MutableState<List<Party>?>, viewModel: DataViewModel) {
     val parties by viewModel.partiesLiveData.observeAsState(emptyList())
@@ -74,12 +79,23 @@ fun PartiesLazyList(filterList: MutableState<List<Party>?>, viewModel: DataViewM
     } else {
         parties
     }
+    var showDialog by remember { mutableStateOf(false) }
+    val selectedParty = remember {
+        mutableStateOf(Party())
+    }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(list.sortedBy { it.name }) { party ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 10.dp),
+                    .padding(top = 10.dp)
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = {
+                            showDialog = true
+                            selectedParty.value = party
+                        }
+                    ),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Box(
@@ -112,6 +128,132 @@ fun PartiesLazyList(filterList: MutableState<List<Party>?>, viewModel: DataViewM
                         color = if (party.receivable) Color.Green else Color.Red,
                         modifier = Modifier.padding(end = 10.dp)
                     )
+                }
+            }
+        }
+    }
+    if (showDialog) {
+        PartyOptionsDialog(viewModel = viewModel, selectedParty) {
+            showDialog = false
+        }
+    }
+}
+
+@Composable
+fun PartyOptionsDialog(
+    viewModel: DataViewModel,
+    selectedParty: MutableState<Party>,
+    onDismiss: () -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    var type by remember { mutableStateOf("")}
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(30.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(text = "Edit Party Name", modifier = Modifier
+                    .padding(10.dp)
+                    .clickable {
+                        showDialog = true
+                        type = "Name"
+//                        onDismiss()
+                    })
+//                Text(text = "Edit Party Balance", modifier = Modifier
+//                    .padding(10.dp)
+//                    .clickable {
+//                        showDialog = true
+//                        type = "Balance"
+////                        onDismiss()
+//                    })
+//                Text(text = "Add Party Balance", modifier = Modifier
+//                    .padding(10.dp)
+//                    .clickable {
+//                        showDialog = true
+//                        type = "Add"
+////                        onDismiss()
+//                    })
+//                Text(text = "Reduce Party Balance", modifier = Modifier
+//                    .padding(10.dp)
+//                    .clickable {
+//                        showDialog = true
+//                        type = "Reduce"
+////                        onDismiss()
+//                    })
+                Text(text = "Edit Borrower", modifier = Modifier
+                    .padding(10.dp)
+                    .clickable {
+                        showDialog = true
+                        type = "Borrower"
+//                        onDismiss()
+                    })
+            }
+        }
+    }
+    if (showDialog) {
+        ShowEditPartyDialog(viewModel, type, selectedParty) {
+            showDialog = false
+        }
+    }
+}
+
+@Composable
+fun ShowEditPartyDialog(
+    viewModel: DataViewModel,
+    type: String,
+    selectedParty: MutableState<Party>,
+    onDismiss1: () -> Unit
+) {
+    var name = selectedParty.value.name
+    var balance = selectedParty.value.balance
+    Dialog(onDismissRequest = onDismiss1) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(30.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                val head = if (type.equals("Name")) "Edit Name" else if (type.equals("Balance")) "Edit Balance" else if (type.equals("Add")) "Add balance" else if(type.equals("Reduce balance")) "Reduce balance" else "Edit Borrower"
+                Text(text = head)
+                Spacer(modifier = Modifier.size(10.dp))
+                if (type.equals("Name")) {
+                    OutlinedTextField(value = name, onValueChange = {name = it})
+                    Button(onClick = {
+                        selectedParty.value.name = name
+                        viewModel.addParty(selectedParty.value)
+                        onDismiss1()
+                    }) {
+                        Text(text = "Save")
+                    }
+                }
+                if ("Edit Borrower".equals(head)) {
+                    var loanSwitch by remember {
+                        mutableStateOf(
+                            value = ToggleSwitch("Borrower", selectedParty.value.receivable)
+                        )
+                    }
+                    PartyType(loanSwitch = loanSwitch) {
+                        loanSwitch = it
+                    }
+                    Button(onClick = {
+                        selectedParty.value.receivable = loanSwitch.isChecked
+                        viewModel.addParty(selectedParty.value)
+                        onDismiss1()
+                    }) {
+                        Text(text = "Save")
+                    }
                 }
             }
         }
@@ -173,6 +315,7 @@ fun HeaderPartyComponent(googleAuthClient: GoogleAuthClient, viewModel: DataView
 private fun AddPartyDialog(viewModel: DataViewModel, onDismiss: () -> Unit) {
     var name = ""
     var number = ""
+    var openingBalance = ""
     var loanSwitch by remember {
         mutableStateOf(
             value = ToggleSwitch("Borrower", false)
@@ -198,7 +341,16 @@ private fun AddPartyDialog(viewModel: DataViewModel, onDismiss: () -> Unit) {
                 OutlinedTextField(
                     value = number,
                     onValueChange = { number = it },
-                    label = { Text(text = "Party Number") })
+                    label = { Text(text = "Party Number") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+                Spacer(modifier = Modifier.size(20.dp))
+                OutlinedTextField(
+                    value = openingBalance,
+                    onValueChange = { openingBalance = it },
+                    label = { Text(text = "Party Number") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                )
                 Spacer(modifier = Modifier.size(20.dp))
                 PartyType(loanSwitch = loanSwitch) {
                     loanSwitch = it
@@ -211,7 +363,7 @@ private fun AddPartyDialog(viewModel: DataViewModel, onDismiss: () -> Unit) {
                             id.toString(),
                             name,
                             number,
-                            "0",
+                            openingBalance,
                             true,
                             loanSwitch.isChecked
                         )

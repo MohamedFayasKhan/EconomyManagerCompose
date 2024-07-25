@@ -5,8 +5,8 @@ import androidx.compose.ui.unit.dp
 
 data class Bank(
     val id: String,
-    val name: String,
-    val number: String,
+    var name: String,
+    var number: String,
     var balance: String,
     val isActive: Boolean
 ) {
@@ -15,11 +15,11 @@ data class Bank(
 
 data class Party(
     val id: String,
-    val name: String,
+    var name: String,
     val number: String,
     var balance: String,
     val isActive: Boolean,
-    val receivable: Boolean
+    var receivable: Boolean
 ) {
     constructor(): this(null.toString(), null.toString(), null.toString(), null.toString(), false, false)
 }

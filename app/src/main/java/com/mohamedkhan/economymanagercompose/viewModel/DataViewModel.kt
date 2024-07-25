@@ -48,6 +48,8 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
     val incomeLiveData: LiveData<String> get() = _incomeLiveData
     private val _expenseLiveData = MutableLiveData<String>()
     val expenseLiveData: LiveData<String> get() = _expenseLiveData
+    private val _totalLiveData = MutableLiveData<String>()
+    val totalLiveData: LiveData<String> get() = _totalLiveData
     private val _durationCategoryLiveData = MutableLiveData<List<Pair<String, Double>>>()
     val durationCategoryLiveData: LiveData<List<Pair<String, Double>>> get() = _durationCategoryLiveData
 
@@ -86,13 +88,12 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
                     viewModelScope.launch {
                         calculateIncome()
                         calculateExpense()
+                        calculateTotalAmount()
                         getChartData("Last 7 Days")
                     }
                 }
 
-                override fun getSingleData(data: Transaction) {
-                    TODO("Not yet implemented")
-                }
+                override fun getSingleData(data: Transaction) {}
 
             }
             repository.readTransactions(fetcher)
@@ -172,7 +173,7 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
         repository.upsertParty(party)
     }
 
-    suspend fun getChartData(duration: String) {
+    fun getChartData(duration: String) {
             val data = mutableListOf<Pair<String, Double>>()
             _categoryLiveData.value?.forEach { category->
                 var categoryTransaction = _transactionLiveData.value?.filter {transaction ->
@@ -245,6 +246,14 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
             }
         }
         _expenseLiveData.value = String.format("%.2f", value)
+    }
+
+    fun calculateTotalAmount(){
+        var value: Double = 0.0
+        _banksLiveData.value?.forEach {
+            value += it.balance.toDouble()
+        }
+        _totalLiveData.value = String.format("%.2f", value)
     }
 
     private fun filterTransactionsByDateRange(

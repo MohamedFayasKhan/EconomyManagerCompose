@@ -1,6 +1,8 @@
 package com.mohamedkhan.economymanagercompose.screen
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
@@ -33,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -59,6 +63,7 @@ fun BankScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BanksLazyList(filterList: MutableState<List<Bank>?>, viewModel: DataViewModel) {
     val banks by viewModel.bankLiveData.observeAsState(emptyList())
@@ -66,6 +71,10 @@ fun BanksLazyList(filterList: MutableState<List<Bank>?>, viewModel: DataViewMode
         filterList.value as List<Bank>
     } else {
         banks
+    }
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedBank = remember {
+        mutableStateOf(Bank())
     }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(list.sortedBy { it.name }) { bank ->
@@ -75,6 +84,13 @@ fun BanksLazyList(filterList: MutableState<List<Bank>?>, viewModel: DataViewMode
                     .padding(16.dp)
                     .fillMaxWidth()
                     .height(200.dp)
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = {
+                            showDialog = true
+                            selectedBank.value = bank
+                        }
+                    )
             ) {
                 Box(
                     modifier = Modifier
@@ -99,6 +115,97 @@ fun BanksLazyList(filterList: MutableState<List<Bank>?>, viewModel: DataViewMode
                             .align(Alignment.BottomStart)
                             .padding(8.dp)
                     )
+                }
+            }
+        }
+    }
+    if (showDialog) {
+        BankOptionDialog(viewModel, selectedBank) {
+            showDialog = false
+        }
+    }
+}
+
+@Composable
+fun BankOptionDialog(viewModel: DataViewModel, selectedBank: MutableState<Bank>, onDismiss: () -> Unit) {
+    var showDialog by remember { mutableStateOf(false) }
+    var type by remember { mutableStateOf("")}
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(30.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(text = "Edit Bank Name", modifier = Modifier
+                    .padding(10.dp)
+                    .clickable {
+                        showDialog = true
+                        type = "Name"
+                    })
+                Text(text = "Edit Bank Number", modifier = Modifier
+                    .padding(10.dp)
+                    .clickable {
+                        showDialog = true
+                        type = "Number"
+                    })
+            }
+        }
+    }
+    if (showDialog) {
+        ShowEditBankDialog(viewModel, type, selectedBank) {
+            showDialog = false
+        }
+    }
+}
+
+@Composable
+fun ShowEditBankDialog(
+    viewModel: DataViewModel,
+    type: String,
+    selectedBank: MutableState<Bank>,
+    onDismiss: () -> Unit
+) {
+    var name = selectedBank.value.name
+    var number = selectedBank.value.number
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(30.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                val head = if (type.equals("Name")) "Edit Name" else "Edit Number"
+                Text(text = head)
+                Spacer(modifier = Modifier.size(10.dp))
+                if (type.equals("Name")) {
+                    OutlinedTextField(value = name, onValueChange = {name = it})
+                    Button(onClick = {
+                        selectedBank.value.name = name
+                        viewModel.addBank(selectedBank.value)
+                        onDismiss()
+                    }) {
+                        Text(text = "Save")
+                    }
+                } else {
+                    OutlinedTextField(value = number, onValueChange = {number = it})
+                    Button(onClick = {
+                        selectedBank.value.number = number
+                        viewModel.addBank(selectedBank.value)
+                        onDismiss()
+                    }) {
+                        Text(text = "Save")
+                    }
                 }
             }
         }
@@ -140,7 +247,7 @@ fun HeaderBankComponent(googleAuthClient: GoogleAuthClient, viewModel: DataViewM
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            Text(text = name + "'s")
+            Text(text = "$name's")
             Text(text = "Bank Accounts")
         }
         Icon(imageVector = Icons.Filled.Add, contentDescription = "add", modifier = Modifier
@@ -160,6 +267,7 @@ fun HeaderBankComponent(googleAuthClient: GoogleAuthClient, viewModel: DataViewM
 private fun AddBankDialog(viewModel: DataViewModel, onDismiss: () -> Unit) {
     var name = ""
     var number = ""
+    var openingBalance = "0"
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
@@ -184,11 +292,22 @@ private fun AddBankDialog(viewModel: DataViewModel, onDismiss: () -> Unit) {
                     onValueChange = { number = it },
                     label = {
                         Text(text = "Bank Number")
-                    })
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+                Spacer(modifier = Modifier.size(20.dp))
+                OutlinedTextField(
+                    value = openingBalance,
+                    onValueChange = { openingBalance = it },
+                    label = {
+                        Text(text = "Opening Balance")
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                )
                 Spacer(modifier = Modifier.size(20.dp))
                 Button(onClick = {
                     val id = viewModel.getUniqueDatabaseId()
-                    viewModel.addBank(Bank(id.toString(), name, number, "0", true))
+                    viewModel.addBank(Bank(id.toString(), name, number, openingBalance, true))
                 }) {
                     Text(text = "Add Bank")
                 }
