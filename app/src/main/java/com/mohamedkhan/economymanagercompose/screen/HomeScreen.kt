@@ -74,6 +74,8 @@ fun HomeScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
     ) {
         HeaderComponent(googleAuthClient)
         Spacer(modifier = Modifier.size(16.dp))
+        TotalBalance(viewModel)
+        Spacer(modifier = Modifier.size(16.dp))
         IncomeExpenseCard(viewModel)
         Spacer(modifier = Modifier.size(16.dp))
         LaunchedEffect(key1 = duration) {
@@ -96,10 +98,23 @@ fun HomeScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
             }
             Spacer(modifier = Modifier.size(16.dp))
             if (durationCategoryChart.value?.isNotEmpty() == true) {
-                BarChart(data = durationCategoryChart.value!!, textColor = textColor)
+                BarChart(data = durationCategoryChart.value!!, textColor = textColor, barColor = textColor)
             }
         }
 
+    }
+}
+
+@Composable
+fun TotalBalance(viewModel: DataViewModel) {
+    val totalBalance = viewModel.totalLiveData.observeAsState()
+    Column {
+        Text(text = "Total Balance")
+        Text(
+            text = "Rs. ${totalBalance.value}",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 

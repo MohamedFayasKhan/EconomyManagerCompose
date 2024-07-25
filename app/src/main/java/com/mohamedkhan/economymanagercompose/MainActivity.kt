@@ -9,6 +9,8 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -94,17 +96,22 @@ class MainActivity : ComponentActivity() {
                             })
                     }
                     composable(route = Router.Main.route) {
+                        val isComplete = remember {
+                            mutableStateOf(false)
+                        }
                         LaunchedEffect(Unit) {
                             viewModel.performTasks {
-
+                                isComplete.value = true
                             }
                         }
-                        MainScreen(
-                            googleAuthClient = googleAuthClient,
-                            lifecycleScope,
-                            viewModel,
-                            navController
-                        )
+                        if (isComplete.value) {
+                            MainScreen(
+                                googleAuthClient = googleAuthClient,
+                                lifecycleScope,
+                                viewModel,
+                                navController
+                            )
+                        }
                     }
                     composable(route = Router.AddTransaction.route) {
                         AddTransaction(viewModel, navController)
