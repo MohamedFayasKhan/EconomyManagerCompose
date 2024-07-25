@@ -88,7 +88,6 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
                     viewModelScope.launch {
                         calculateIncome()
                         calculateExpense()
-                        calculateTotalAmount()
                         getChartData("Last 7 Days")
                     }
                 }
@@ -120,6 +119,9 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
             val fetcher = object : DataFetcher<Bank> {
                 override fun getDataFromFireBase(list: List<Bank>) {
                     _banksLiveData.value = list
+                    viewModelScope.launch {
+                        calculateTotalAmount()
+                    }
                 }
 
                 override fun getSingleData(data: Bank) {
