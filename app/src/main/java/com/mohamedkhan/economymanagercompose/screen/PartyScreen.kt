@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -36,10 +37,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.mohamedkhan.economymanagercompose.R
 import com.mohamedkhan.economymanagercompose.database.Party
 import com.mohamedkhan.economymanagercompose.database.ToggleSwitch
 import com.mohamedkhan.economymanagercompose.signin.GoogleAuthClient
@@ -47,23 +50,32 @@ import com.mohamedkhan.economymanagercompose.viewModel.DataViewModel
 
 @Composable
 fun PartyScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
+    val filterList = remember {
+        mutableStateOf<List<Party>?>(emptyList())
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .padding(16.dp)
     ) {
         Column {
             HeaderPartyComponent(googleAuthClient, viewModel)
-            SearchBoxParty()
-            PartiesLazyList(viewModel)
+            SearchBoxParty(filterList, viewModel)
+            PartiesLazyList(filterList, viewModel)
         }
     }
 }
 
 @Composable
-fun PartiesLazyList(viewModel: DataViewModel) {
+fun PartiesLazyList(filterList: MutableState<List<Party>?>, viewModel: DataViewModel) {
     val parties by viewModel.partiesLiveData.observeAsState(emptyList())
+    val list = if (filterList.value != null && filterList.value!!.isNotEmpty()) {
+        filterList.value as List<Party>
+    } else {
+        parties
+    }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(parties.sortedBy { it.name }) { party ->
+        items(list.sortedBy { it.name }) { party ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -77,7 +89,7 @@ fun PartiesLazyList(viewModel: DataViewModel) {
                         .background(Color.Gray)
                         .size(50.dp)
                 ) {
-                    Text(text = party.name.get(0).toString())
+                    Text(text = party.name[0].toString())
                 }
                 Column(
                     modifier = Modifier
@@ -107,8 +119,29 @@ fun PartiesLazyList(viewModel: DataViewModel) {
 }
 
 @Composable
-fun SearchBoxParty() {
-    Spacer(modifier = Modifier.height(32.dp))
+fun SearchBoxParty(filterList: MutableState<List<Party>?>, viewModel: DataViewModel) {
+    var searchText by remember {
+        mutableStateOf("")
+    }
+    OutlinedTextField(
+        value = searchText,
+        onValueChange = { text ->
+            searchText = text
+            filterList.value = viewModel.partiesLiveData.value?.filter {party ->
+                party.name.lowercase().contains(searchText) ||
+                        party.number.lowercase().contains(searchText) ||
+                        party.balance.lowercase().contains(searchText)
+            }
+
+        },
+        label = {
+            Text(text = stringResource(id = R.string.search))
+        },
+        leadingIcon = {
+            Icon(imageVector = Icons.Filled.Search, contentDescription = stringResource(R.string.search))
+        },
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
 @Composable
@@ -120,7 +153,7 @@ fun HeaderPartyComponent(googleAuthClient: GoogleAuthClient, viewModel: DataView
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            Text(text = name + "'s")
+            Text(text ="$name's")
             Text(text = "Parties")
         }
         Icon(imageVector = Icons.Filled.Add, contentDescription = "add", modifier = Modifier

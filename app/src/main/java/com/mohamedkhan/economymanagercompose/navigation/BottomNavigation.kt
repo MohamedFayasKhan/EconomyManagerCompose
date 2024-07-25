@@ -33,7 +33,7 @@ fun BottomNavigationGraph(
 ) {
     NavHost(navController = navHostController, startDestination = Screen.HomeScreen.route){
         composable(route= Screen.HomeScreen.route){
-            HomeScreen(googleAuthClient)
+            HomeScreen(googleAuthClient, viewModel)
         }
         composable(route= Screen.TransactionScreen.route){
             TransactionScreen(googleAuthClient, viewModel, navControllerMainActivity)

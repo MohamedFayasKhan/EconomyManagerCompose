@@ -23,9 +23,9 @@ fun MainScreen(
     val navHostController = rememberNavController()
     Scaffold(
         bottomBar = { BottomBar(navHostController = navHostController)}
-    ) {innerpadding->
-        Box(modifier = Modifier.padding(innerpadding)) {
-            BottomNavigationGraph(navHostController = navHostController, googleAuthClient = googleAuthClient, lifecycleScope = lifecycleScope, viewModel= viewModel, navControllerMainActivity=navControllerMainActivity)
+    ) {innerPadding->
+        Box(modifier = Modifier.padding(innerPadding)) {
+            BottomNavigationGraph(navHostController = navHostController, googleAuthClient = googleAuthClient, lifecycleScope = lifecycleScope, viewModel= viewModel, navControllerMainActivity = navControllerMainActivity)
         }
     }
 }

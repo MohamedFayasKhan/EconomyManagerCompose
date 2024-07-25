@@ -9,7 +9,6 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -22,6 +21,7 @@ import com.mohamedkhan.economymanagercompose.route.Router
 import com.mohamedkhan.economymanagercompose.screen.AddTransaction
 import com.mohamedkhan.economymanagercompose.screen.MainScreen
 import com.mohamedkhan.economymanagercompose.screen.SignInScreen
+import com.mohamedkhan.economymanagercompose.screen.SplashScreen
 import com.mohamedkhan.economymanagercompose.signin.GoogleAuthClient
 import com.mohamedkhan.economymanagercompose.ui.theme.EconomyManagerComposeTheme
 import com.mohamedkhan.economymanagercompose.viewModel.DataViewModel
@@ -41,19 +41,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        installSplashScreen()
-        viewModel = ViewModelProvider(this).get(DataViewModel::class.java)
+        viewModel = ViewModelProvider(this)[DataViewModel::class.java]
         viewModel.initDatabase(googleAuthClient.getSignedInUser()?.userId)
-//        lifecycleScope.launch {
-//            viewModel.readTransactions()
-//        }
         setContent {
             EconomyManagerComposeTheme {
                 val navController = rememberNavController()
-                val startDestination =
-                    if (googleAuthClient.getSignedInUser() != null) Router.Main.route else Router.Login.route
-//                    Router.AddTransaction.route
-                NavHost(navController = navController, startDestination = startDestination) {
+                NavHost(navController = navController, startDestination = Router.Splash.route) {
+                    composable(Router.Splash.route) {
+                        SplashScreen(navController, googleAuthClient)
+                    }
                     composable(Router.Login.route) {
                         val viewModel = viewModel<SignInViewModel>()
                         val state by viewModel.state.collectAsStateWithLifecycle()
@@ -99,19 +95,22 @@ class MainActivity : ComponentActivity() {
                     }
                     composable(route = Router.Main.route) {
                         LaunchedEffect(Unit) {
-                            viewModel.performTasks {}
+                            viewModel.performTasks {
+
+                            }
                         }
-                        MainScreen(googleAuthClient = googleAuthClient, lifecycleScope, viewModel, navController)
+                        MainScreen(
+                            googleAuthClient = googleAuthClient,
+                            lifecycleScope,
+                            viewModel,
+                            navController
+                        )
                     }
-//                    composable(route = Router.Loading.route) {
-//                        InitialLoading(
-//                            googleAuthClient = googleAuthClient, navController, viewModel
-//                        )
-//                    }
-                    composable(route= Router.AddTransaction.route) {
+                    composable(route = Router.AddTransaction.route) {
                         AddTransaction(viewModel, navController)
                     }
                 }
+
             }
         }
     }
