@@ -16,7 +16,7 @@ data class Bank(
 data class Party(
     val id: String,
     var name: String,
-    val number: String,
+    var number: String,
     var balance: String,
     val isActive: Boolean,
     var receivable: Boolean

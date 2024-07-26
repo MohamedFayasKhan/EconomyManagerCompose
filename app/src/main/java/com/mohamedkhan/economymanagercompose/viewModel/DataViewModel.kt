@@ -3,6 +3,8 @@ package com.mohamedkhan.economymanagercompose.viewModel
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -20,29 +22,26 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Collections
 import java.util.Date
 import java.util.Locale
 
 class DataViewModel(application: Application): AndroidViewModel(application) {
 
     private lateinit var repository: DataRepository
-//    private val _usersLiveData = MutableLiveData<List<User>>()
-//    val usersLiveData: LiveData<List<User>> get() = _usersLiveData
-    private val _transactionLiveData = MutableLiveData<List<Transaction>>()
-    val transactionLiveData: LiveData<List<Transaction>> get() = _transactionLiveData
+    private val _transactionLiveData = mutableStateListOf<Transaction>()
+    val transactionLiveData: SnapshotStateList<Transaction> = _transactionLiveData
 
-    private val _partiesLiveData = MutableLiveData<List<Party>>()
-    val partiesLiveData: LiveData<List<Party>> get() = _partiesLiveData
+    private val _partiesLiveData = mutableStateListOf<Party>()
+    val partiesLiveData: SnapshotStateList<Party> = _partiesLiveData
 
-    private val _banksLiveData = MutableLiveData<List<Bank>>()
-    val bankLiveData: LiveData<List<Bank>> get() = _banksLiveData
+    private val _banksLiveData = mutableStateListOf<Bank>()
+    val bankLiveData: SnapshotStateList<Bank> = _banksLiveData
 
-    private val _categoryLiveData = MutableLiveData<List<Category>>()
-    val categoryLiveData: LiveData<List<Category>> get() = _categoryLiveData
+    private val _categoryLiveData = mutableStateListOf<Category>()
+    val categoryLiveData: SnapshotStateList<Category> = _categoryLiveData
 
-    private val _typeLiveData = MutableLiveData<List<Type>>()
-    val typeLiveData: LiveData<List<Type>> get() = _typeLiveData
+    private var _typeLiveData = mutableStateListOf<Type>()
+    val typeLiveData: SnapshotStateList<Type> = _typeLiveData
 
     private val _incomeLiveData = MutableLiveData<String>()
     val incomeLiveData: LiveData<String> get() = _incomeLiveData
@@ -56,17 +55,17 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
     fun initDatabase(uid: String?) {
         val database = uid?.let { Database.getDataBase().child(it).child(Constant.DATAS) }
         repository = DataRepository(database)
-        _typeLiveData.value = listOf<Type>(
+        _typeLiveData.addAll(listOf<Type>(
             Type(Constant.SPENT,Constant.SPENT_VALUE),
             Type(Constant.BANK_TO_BANK,Constant.BANK_TO_BANK_VALUE),
             Type(Constant.BANK_TO_PARTY,Constant.BANK_TO_PARTY_VALUE),
-//            Type(Constant.PARTY_TO_PARTY,Constant.PARTY_TO_PARTY_VALUE),
+            //            Type(Constant.PARTY_TO_PARTY,Constant.PARTY_TO_PARTY_VALUE),
             Type(Constant.PARTY_TO_BANK,Constant.PARTY_TO_BANK_VALUE),
             Type(Constant.ADD_BALANCE_TO_BANK,Constant.ADD_BALANCE_TO_BANK_VALUE),
             Type(Constant.REDUCE_BALANCE_FROM_BANK,Constant.REDUCE_BALANCE_FROM_BANK_VALUE),
             Type(Constant.ADD_BALANCE_TO_PARTY,Constant.ADD_BALANCE_TO_PARTY_VALUE),
             Type(Constant.REDUCE_BALANCE_FROM_PARTY,Constant.REDUCE_BALANCE_FROM_PARTY_VALUE)
-        )
+        ))
     }
 
     fun performTasks(onComplete: () -> Unit) {
@@ -79,12 +78,12 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    fun readTransactions() {
+    private fun readTransactions() {
         viewModelScope.launch(Dispatchers.IO) {
             val fetcher = object : DataFetcher<Transaction> {
                 override fun getDataFromFireBase(list: List<Transaction>) {
-                    Collections.reverse(list)
-                    _transactionLiveData.value = list
+                    _transactionLiveData.clear()
+                    _transactionLiveData.addAll(list.distinct().reversed())
                     viewModelScope.launch {
                         calculateIncome()
                         calculateExpense()
@@ -99,33 +98,34 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    fun readParties() {
+    private fun readParties() {
         viewModelScope.launch(Dispatchers.IO) {
             val fetcher = object : DataFetcher<Party> {
                 override fun getDataFromFireBase(list: List<Party>) {
-                    _partiesLiveData.value = list
+                    _partiesLiveData.clear()
+                    partiesLiveData.addAll(list.distinct())
                 }
 
                 override fun getSingleData(data: Party) {
-                    TODO("Not yet implemented")
+
                 }
             }
             repository.readParties(fetcher)
         }
     }
 
-    fun readBanks() {
+    private fun readBanks() {
         viewModelScope.launch(Dispatchers.IO) {
             val fetcher = object : DataFetcher<Bank> {
                 override fun getDataFromFireBase(list: List<Bank>) {
-                    _banksLiveData.value = list
+                    _banksLiveData.clear()
+                    _banksLiveData.addAll(list.distinct())
                     viewModelScope.launch {
                         calculateTotalAmount()
                     }
                 }
 
                 override fun getSingleData(data: Bank) {
-                    TODO("Not yet implemented")
                 }
 
             }
@@ -133,15 +133,16 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    fun readCategories(){
+    private fun readCategories(){
         viewModelScope.launch(Dispatchers.IO) {
             val fetcher = object : DataFetcher<Category> {
                 override fun getDataFromFireBase(list: List<Category>) {
-                    _categoryLiveData.value = list
+                    _categoryLiveData.clear()
+                    _categoryLiveData.addAll(list.distinct())
                 }
 
                 override fun getSingleData(data: Category) {
-                    TODO("Not yet implemented")
+
                 }
 
             }
@@ -158,7 +159,7 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
     }
 
     fun addTransaction(transaction: Transaction, context: Context, checked: Boolean, isTransactionCompleted: (Boolean) -> Unit) {
-        repository.addTransaction(context, transaction, categoryLiveData, partiesLiveData, bankLiveData, checked) {
+        repository.addTransaction(context, transaction, partiesLiveData, bankLiveData, checked) {
             isTransactionCompleted(it)
         }
     }
@@ -177,39 +178,46 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
 
     fun getChartData(duration: String) {
             val data = mutableListOf<Pair<String, Double>>()
-            _categoryLiveData.value?.forEach { category->
-                var categoryTransaction = _transactionLiveData.value?.filter {transaction ->
+            _categoryLiveData.forEach { category->
+                var categoryTransaction = _transactionLiveData.filter {transaction ->
                     category.id == transaction.category
                 }
                 val currentYear = Calendar.getInstance().get(Calendar.YEAR)
                 val currentDate = Calendar.getInstance().time
-                val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT)
+                val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.getDefault())
                 val today = dateFormat.format(currentDate)
-                if (duration.equals("This Year")) {
-                    categoryTransaction = filterTransactionsByDateRange(categoryTransaction, "Jan 01, $currentYear", today)
-                } else if (duration.equals("This Month")) {
-                    val lastMonth = Calendar.getInstance()
-                    lastMonth.add(Calendar.MONTH, -1)
-                    lastMonth.set(Calendar.DAY_OF_MONTH, 1)
-                    val lastDayOfLastMonth = Calendar.getInstance()
-                    lastDayOfLastMonth.set(Calendar.DAY_OF_MONTH, 1)
-                    lastDayOfLastMonth.add(Calendar.DAY_OF_MONTH, -1)
-                    val lastMonthStart = dateFormat.format(lastMonth.time)
-                    val lastMonthEnd = dateFormat.format(lastDayOfLastMonth.time)
-                    categoryTransaction = filterTransactionsByDateRange(categoryTransaction, lastMonthStart, lastMonthEnd)
-                } else if (duration.equals("Last 7 Days")) {
-                    val sevenDaysAgo = Calendar.getInstance()
-                    sevenDaysAgo.add(Calendar.DAY_OF_MONTH, -7)
-                    val sevenDaysAgoDate = dateFormat.format(sevenDaysAgo.time)
-                    categoryTransaction = filterTransactionsByDateRange(categoryTransaction, sevenDaysAgoDate, today)
-                } else if (duration.equals("Today")) {
-                    categoryTransaction = filterTransactionsByDateRange(categoryTransaction, today, today)
+                when (duration) {
+                    "This Year" -> {
+                        categoryTransaction = filterTransactionsByDateRange(categoryTransaction, "Jan 01, $currentYear", today)!!
+                    }
+                    "This Month" -> {
+                        val lastMonth = Calendar.getInstance()
+                        lastMonth.add(Calendar.MONTH, -1)
+                        lastMonth.set(Calendar.DAY_OF_MONTH, 1)
+                        val lastDayOfLastMonth = Calendar.getInstance()
+                        lastDayOfLastMonth.set(Calendar.DAY_OF_MONTH, 1)
+                        lastDayOfLastMonth.add(Calendar.DAY_OF_MONTH, -1)
+                        val lastMonthStart = dateFormat.format(lastMonth.time)
+                        val lastMonthEnd = dateFormat.format(lastDayOfLastMonth.time)
+                        categoryTransaction = filterTransactionsByDateRange(categoryTransaction, lastMonthStart, lastMonthEnd)!!
+                    }
+                    "Last 7 Days" -> {
+                        val sevenDaysAgo = Calendar.getInstance()
+                        sevenDaysAgo.add(Calendar.DAY_OF_MONTH, -7)
+                        val sevenDaysAgoDate = dateFormat.format(sevenDaysAgo.time)
+                        categoryTransaction =
+                            filterTransactionsByDateRange(categoryTransaction, sevenDaysAgoDate, today)!!
+                    }
+                    "Today" -> {
+                        categoryTransaction =
+                            filterTransactionsByDateRange(categoryTransaction, today, today)!!
+                    }
                 }
                 var amount: Double = 0.0
-                categoryTransaction?.forEach {
+                categoryTransaction.forEach {
                     amount += it.amount.toDouble()
                 }
-                if (!categoryTransaction.isNullOrEmpty()) {
+                if (categoryTransaction.isNotEmpty()) {
                     data.add(Pair<String, Double>(category.name, amount))
                 }
             }
@@ -220,13 +228,13 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
     fun calculateIncome() {
         val currentYear = Calendar.getInstance().get(Calendar.YEAR)
         val currentDate = Calendar.getInstance().time
-        val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT)
+        val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.getDefault())
         val today = dateFormat.format(currentDate)
-        var incomeData = _transactionLiveData.value?.filter { it.income && it.type != Constant.BANK_TO_BANK }
-        incomeData = filterTransactionsByDateRange(incomeData, "Jan 01, $currentYear", today)
+        var incomeData = _transactionLiveData.filter { it.income && it.type != Constant.BANK_TO_BANK }
+        incomeData = filterTransactionsByDateRange(incomeData, "Jan 01, $currentYear", today)!!
         var value: Double = 0.0
-        if (!incomeData.isNullOrEmpty()) {
-            for (data in incomeData) {
+        if (incomeData.isNotEmpty()) {
+            for (data in incomeData.distinct()) {
                 value += data.amount.toDouble()
             }
         }
@@ -237,13 +245,13 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
     fun calculateExpense() {
         val currentYear = Calendar.getInstance().get(Calendar.YEAR)
         val currentDate = Calendar.getInstance().time
-        val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT)
+        val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.getDefault())
         val today = dateFormat.format(currentDate)
-        var expenseData = _transactionLiveData.value?.filter { !it.income }
-        expenseData = filterTransactionsByDateRange(expenseData, "Jan 01, $currentYear", today)
+        var expenseData = _transactionLiveData.filter { !it.income }
+        expenseData = filterTransactionsByDateRange(expenseData, "Jan 01, $currentYear", today)!!
         var value: Double = 0.0
         if (!expenseData.isNullOrEmpty()) {
-            for (data in expenseData) {
+            for (data in expenseData.distinct()) {
                 value += data.amount.toDouble()
             }
         }
@@ -252,21 +260,21 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
 
     fun calculateTotalAmount(){
         var value: Double = 0.0
-        _banksLiveData.value?.forEach {
+        _banksLiveData.distinct().forEach {
             value += it.balance.toDouble()
         }
-        _totalLiveData.value = String.format("%.2f", value)
+        _totalLiveData.value = String.format(Locale.getDefault(), "%.2f", value)
     }
 
     private fun filterTransactionsByDateRange(
-        transactions: List<Transaction>?,
+        transactions: List<Transaction>,
         startDate: String,
         endDate: String
     ): List<Transaction>? {
         val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.ENGLISH)
         val start: Date = dateFormat.parse(startDate) ?: return emptyList()
         val end: Date = dateFormat.parse(endDate) ?: return emptyList()
-        return transactions?.filter {
+        return transactions.filter {
             val s = it.date
             val transactionDate: Date = dateFormat.parse(it.date) ?: return@filter false
             transactionDate in start..end

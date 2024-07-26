@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -81,26 +82,39 @@ fun HomeScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
         LaunchedEffect(key1 = duration) {
             viewModel.getChartData(duration)
         }
-        if (!durationCategoryChart.value.isNullOrEmpty()) {
+
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = stringResource(R.string.categorize_transactions),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.size(16.dp))
-                ChartDuration(durationChanged) { dur ->
-                    duration = dur
+                Spacer(modifier = Modifier.size(10.dp))
+                Box(modifier = Modifier.weight(1f)) {
+                    ChartDuration(durationChanged) { dur ->
+                        duration = dur
+                    }
                 }
             }
             Spacer(modifier = Modifier.size(16.dp))
             if (durationCategoryChart.value?.isNotEmpty() == true) {
                 BarChart(data = durationCategoryChart.value!!, textColor = textColor, barColor = textColor)
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ){
+                    Text(text = "Nothing to show",fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold)
+                }
             }
-        }
 
     }
 }
@@ -108,7 +122,7 @@ fun HomeScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
 @Composable
 fun TotalBalance(viewModel: DataViewModel) {
     val totalBalance = viewModel.totalLiveData.observeAsState()
-    Column {
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = "Total Balance")
         Text(
             text = "Rs. ${totalBalance.value}",

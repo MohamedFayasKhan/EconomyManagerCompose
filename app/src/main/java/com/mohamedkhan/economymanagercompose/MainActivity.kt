@@ -53,8 +53,8 @@ class MainActivity : ComponentActivity() {
                         SplashScreen(navController, googleAuthClient)
                     }
                     composable(Router.Login.route) {
-                        val viewModel = viewModel<SignInViewModel>()
-                        val state by viewModel.state.collectAsStateWithLifecycle()
+                        val signViewModal = viewModel<SignInViewModel>()
+                        val state by signViewModal.state.collectAsStateWithLifecycle()
 
                         LaunchedEffect(key1 = Unit) {
                             if (googleAuthClient.getSignedInUser() != null) {
@@ -64,8 +64,10 @@ class MainActivity : ComponentActivity() {
 
                         LaunchedEffect(key1 = state.isSignInSuccessful) {
                             if (state.isSignInSuccessful) {
-                                navController.navigate(Router.Main.route)
-                                viewModel.resetState()
+                                viewModel.performTasks {
+                                    navController.navigate(Router.Main.route)
+                                    signViewModal.resetState()
+                                }
                             }
                         }
 
@@ -78,7 +80,7 @@ class MainActivity : ComponentActivity() {
                                             googleAuthClient.getSignInResultFromIntent(
                                                 intent = result.data ?: return@launch
                                             )
-                                        viewModel.onSignInResult(signInResult)
+                                        signViewModal.onSignInResult(signInResult)
                                     }
                                 }
                             }

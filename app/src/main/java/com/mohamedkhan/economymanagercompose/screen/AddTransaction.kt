@@ -32,12 +32,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.LiveData
 import androidx.navigation.NavHostController
 import com.mohamedkhan.economymanagercompose.constant.Constant
 import com.mohamedkhan.economymanagercompose.database.Bank
@@ -524,7 +524,7 @@ fun <T> DropDownCategory(
     expanded: Boolean,
     id: MutableState<String>,
     value: MutableState<String>,
-    liveData: LiveData<List<T>>,
+    liveData: SnapshotStateList<T>,
     type: String,
     label: String,
     onExpandedChange: (Boolean) -> Unit,
@@ -557,7 +557,7 @@ fun <T> DropDownCategory(
 
             ) {
             if (type == "Category") {
-                mergeAddCategory((liveData as LiveData<List<Category>>).value)?.forEach {
+                mergeAddCategory((liveData as SnapshotStateList<Category>))?.forEach {
                     DropdownMenuItem(
                         modifier = Modifier.fillMaxWidth(),
                         text = { Text(text = it.name) },
@@ -575,7 +575,7 @@ fun <T> DropDownCategory(
                     )
                 }
             } else if (type == "Bank") {
-                (liveData as LiveData<List<Bank>>).value?.forEach {
+                (liveData as SnapshotStateList<Bank>)?.forEach {
                     DropdownMenuItem(
                         modifier = Modifier.fillMaxWidth(),
                         text = { Text(text = it.name) },
@@ -589,7 +589,7 @@ fun <T> DropDownCategory(
                     )
                 }
             } else if (type == "Party") {
-                (liveData as LiveData<List<Party>>).value?.forEach {
+                (liveData as SnapshotStateList<Party>)?.forEach {
                     DropdownMenuItem(
                         modifier = Modifier.fillMaxWidth(),
                         text = { Text(text = it.name) },
@@ -603,7 +603,7 @@ fun <T> DropDownCategory(
                     )
                 }
             } else if (type == "Type") {
-                (liveData as LiveData<List<Type>>).value?.forEach {
+                (liveData as SnapshotStateList<Type>)?.forEach {
                     DropdownMenuItem(
                         modifier = Modifier.fillMaxWidth(),
                         text = { Text(text = it.name) },

@@ -1,5 +1,6 @@
 package com.mohamedkhan.economymanagercompose.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,7 +33,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -73,7 +74,7 @@ fun PartyScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PartiesLazyList(filterList: MutableState<List<Party>?>, viewModel: DataViewModel) {
-    val parties by viewModel.partiesLiveData.observeAsState(emptyList())
+    val parties = viewModel.partiesLiveData
     val list = if (filterList.value != null && filterList.value!!.isNotEmpty()) {
         filterList.value as List<Party>
     } else {
@@ -84,7 +85,7 @@ fun PartiesLazyList(filterList: MutableState<List<Party>?>, viewModel: DataViewM
         mutableStateOf(Party())
     }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(list.sortedBy { it.name }) { party ->
+        items(list.distinct().sortedBy { it.name }) { party ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -166,13 +167,13 @@ fun PartyOptionsDialog(
                         type = "Name"
 //                        onDismiss()
                     })
-//                Text(text = "Edit Party Balance", modifier = Modifier
-//                    .padding(10.dp)
-//                    .clickable {
-//                        showDialog = true
-//                        type = "Balance"
-////                        onDismiss()
-//                    })
+                Text(text = "Edit Party Number", modifier = Modifier
+                    .padding(10.dp)
+                    .clickable {
+                        showDialog = true
+                        type = "Number"
+//                        onDismiss()
+                    })
 //                Text(text = "Add Party Balance", modifier = Modifier
 //                    .padding(10.dp)
 //                    .clickable {
@@ -200,6 +201,7 @@ fun PartyOptionsDialog(
     if (showDialog) {
         ShowEditPartyDialog(viewModel, type, selectedParty) {
             showDialog = false
+            onDismiss()
         }
     }
 }
@@ -211,8 +213,13 @@ fun ShowEditPartyDialog(
     selectedParty: MutableState<Party>,
     onDismiss1: () -> Unit
 ) {
-    var name = selectedParty.value.name
-    var balance = selectedParty.value.balance
+    val context = LocalContext.current
+    var name by remember {
+        mutableStateOf(selectedParty.value.name)
+    }
+    var number by remember {
+        mutableStateOf(selectedParty.value.number)
+    }
     Dialog(onDismissRequest = onDismiss1) {
         Surface(
             shape = RoundedCornerShape(16.dp),
@@ -225,15 +232,32 @@ fun ShowEditPartyDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                val head = if (type.equals("Name")) "Edit Name" else if (type.equals("Balance")) "Edit Balance" else if (type.equals("Add")) "Add balance" else if(type.equals("Reduce balance")) "Reduce balance" else "Edit Borrower"
+                val head = if (type.equals("Name")) "Edit Name" else if (type.equals("Number")) "Edit Number" else if (type.equals("Add")) "Add balance" else if(type.equals("Reduce balance")) "Reduce balance" else "Edit Borrower"
                 Text(text = head)
                 Spacer(modifier = Modifier.size(10.dp))
                 if (type.equals("Name")) {
                     OutlinedTextField(value = name, onValueChange = {name = it})
                     Button(onClick = {
-                        selectedParty.value.name = name
-                        viewModel.addParty(selectedParty.value)
-                        onDismiss1()
+                        if (name != "") {
+                            selectedParty.value.name = name
+                            viewModel.addParty(selectedParty.value)
+                            onDismiss1()
+                        } else {
+                            Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
+                        Text(text = "Save")
+                    }
+                } else if (type.equals("Number")) {
+                    OutlinedTextField(value = number, onValueChange = {number = it}, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                    Button(onClick = {
+                        if (number != "") {
+                            selectedParty.value.number = number
+                            viewModel.addParty(selectedParty.value)
+                            onDismiss1()
+                        } else {
+                            Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                        }
                     }) {
                         Text(text = "Save")
                     }
@@ -269,7 +293,7 @@ fun SearchBoxParty(filterList: MutableState<List<Party>?>, viewModel: DataViewMo
         value = searchText,
         onValueChange = { text ->
             searchText = text
-            filterList.value = viewModel.partiesLiveData.value?.filter {party ->
+            filterList.value = viewModel.partiesLiveData.filter {party ->
                 party.name.lowercase().contains(searchText) ||
                         party.number.lowercase().contains(searchText) ||
                         party.balance.lowercase().contains(searchText)
@@ -313,14 +337,21 @@ fun HeaderPartyComponent(googleAuthClient: GoogleAuthClient, viewModel: DataView
 
 @Composable
 private fun AddPartyDialog(viewModel: DataViewModel, onDismiss: () -> Unit) {
-    var name = ""
-    var number = ""
-    var openingBalance = ""
+    var name by remember {
+        mutableStateOf("")
+    }
+    var number by remember {
+        mutableStateOf("")
+    }
+    var openingBalance by remember {
+        mutableStateOf("0")
+    }
     var loanSwitch by remember {
         mutableStateOf(
             value = ToggleSwitch("Borrower", false)
         )
     }
+    val context = LocalContext.current
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
@@ -348,7 +379,7 @@ private fun AddPartyDialog(viewModel: DataViewModel, onDismiss: () -> Unit) {
                 OutlinedTextField(
                     value = openingBalance,
                     onValueChange = { openingBalance = it },
-                    label = { Text(text = "Party Number") },
+                    label = { Text(text = "Opening Balance") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
                 Spacer(modifier = Modifier.size(20.dp))
@@ -357,17 +388,22 @@ private fun AddPartyDialog(viewModel: DataViewModel, onDismiss: () -> Unit) {
                 }
                 Spacer(modifier = Modifier.size(20.dp))
                 Button(onClick = {
-                    val id = viewModel.getUniqueDatabaseId()
-                    viewModel.addParty(
-                        Party(
-                            id.toString(),
-                            name,
-                            number,
-                            openingBalance,
-                            true,
-                            loanSwitch.isChecked
+                    if (name != "" && number != "" && openingBalance != "") {
+                        val id = viewModel.getUniqueDatabaseId()
+                        viewModel.addParty(
+                            Party(
+                                id.toString(),
+                                name,
+                                number,
+                                openingBalance,
+                                true,
+                                loanSwitch.isChecked
+                            )
                         )
-                    )
+                        onDismiss()
+                    } else {
+                        Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                    }
                 }) {
                     Text(text = "Add Party")
                 }

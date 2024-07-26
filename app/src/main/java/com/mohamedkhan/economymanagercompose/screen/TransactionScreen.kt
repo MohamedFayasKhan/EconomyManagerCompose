@@ -28,7 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -108,26 +107,26 @@ private fun TransactionDetail(
                         Constant.SPENT -> {
 
                             val from =
-                                viewModel.bankLiveData.value?.filter { transaction.from == it.id }
-                            transferData = "Paid from " + from?.get(0)?.name
-                            "Paid from " + from?.get(0)?.name
+                                viewModel.bankLiveData.filter { transaction.from == it.id }
+                            transferData = "Paid from " + from.get(0).name
+                            "Paid from " + from[0].name
                         }
 
                         Constant.BANK_TO_BANK -> {
                             val from =
-                                viewModel.bankLiveData.value?.filter { transaction.from == it.id }
+                                viewModel.bankLiveData.filter { transaction.from == it.id }
                             val to =
-                                viewModel.bankLiveData.value?.filter { transaction.to == it.id }
+                                viewModel.bankLiveData.filter { transaction.to == it.id }
                             transferData =
-                                "Transfer from " + from?.get(0)?.name + " to " + to?.get(0)?.name
-                            "Transfer from " + from?.get(0)?.name + " to " + to?.get(0)?.name
+                                "Transfer from " + from[0].name + " to " + to[0].name
+                            "Transfer from " + from[0].name + " to " + to[0].name
                         }
 
                         Constant.BANK_TO_PARTY -> {
                             val from =
-                                viewModel.bankLiveData.value?.filter { transaction.from == it.id }
+                                viewModel.bankLiveData.filter { transaction.from == it.id }
                             val to =
-                                viewModel.partiesLiveData.value?.filter { transaction.to == it.id }
+                                viewModel.partiesLiveData.filter { transaction.to == it.id }
                             transferData =
                                 "Sent from " + from?.get(0)?.name + " to " + to?.get(0)?.name
                             "Sent from " + from?.get(0)?.name + " to " + to?.get(0)?.name
@@ -135,35 +134,35 @@ private fun TransactionDetail(
 
                         Constant.PARTY_TO_BANK -> {
                             val to =
-                                viewModel.bankLiveData.value?.filter { transaction.to == it.id }
+                                viewModel.bankLiveData.filter { transaction.to == it.id }
                             transferData = "Credited to " + to?.get(0)?.name
                             "Credited to " + to?.get(0)?.name
                         }
 
                         Constant.ADD_BALANCE_TO_BANK -> {
                             val to =
-                                viewModel.bankLiveData.value?.filter { transaction.to == it.id }
+                                viewModel.bankLiveData.filter { transaction.to == it.id }
                             transferData = "Credited to " + to?.get(0)?.name
                             "Credited to " + to?.get(0)?.name
                         }
 
                         Constant.REDUCE_BALANCE_FROM_BANK -> {
                             val from =
-                                viewModel.bankLiveData.value?.filter { transaction.from == it.id }
+                                viewModel.bankLiveData.filter { transaction.from == it.id }
                             transferData = "Debited from " + from?.get(0)?.name
                             "Debited from " + from?.get(0)?.name
                         }
 
                         Constant.ADD_BALANCE_TO_PARTY -> {
                             val to =
-                                viewModel.partiesLiveData.value?.filter { transaction.to == it.id }
+                                viewModel.partiesLiveData.filter { transaction.to == it.id }
                             transferData = "Added to " + to?.get(0)?.name
                             "Added to " + to?.get(0)?.name
                         }
 
                         Constant.REDUCE_BALANCE_FROM_PARTY -> {
                             val from =
-                                viewModel.partiesLiveData.value?.filter { transaction.from == it.id }
+                                viewModel.partiesLiveData.filter { transaction.from == it.id }
                             transferData = "Reduced to " + from?.get(0)?.name
                             "Reduced to " + from?.get(0)?.name
                         }
@@ -190,7 +189,7 @@ private fun TransactionDetail(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
-                val cat = viewModel.categoryLiveData.value?.filter { transaction.category == it.id }
+                val cat = viewModel.categoryLiveData?.filter { transaction.category == it.id }
                 Text(
                     text = cat?.get(0)?.name.toString()
                 )
@@ -241,7 +240,7 @@ private fun shareTransaction(
 @Composable
 fun TransactionsLazyList(filterList: MutableState<List<Transaction>?>, viewModel: DataViewModel) {
     var showDialog by remember { mutableStateOf(false) }
-    val transactions by viewModel.transactionLiveData.observeAsState(emptyList())
+    val transactions = viewModel.transactionLiveData
     var selectedItem by remember { mutableStateOf(Transaction()) }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         val list = if (filterList.value != null && filterList.value!!.isNotEmpty()) {
@@ -321,7 +320,7 @@ fun SearchBoxTransaction(filterList: MutableState<List<Transaction>?>, viewModel
         value = searchText,
         onValueChange = { text ->
             searchText = text
-            filterList.value = viewModel.transactionLiveData.value?.filter {transaction ->
+            filterList.value = viewModel.transactionLiveData.filter {transaction ->
                 transaction.subject.lowercase().contains(searchText.lowercase()) ||
                         transaction.amount.lowercase().contains(searchText.lowercase()) ||
                         transaction.category.lowercase().contains(searchText.lowercase())

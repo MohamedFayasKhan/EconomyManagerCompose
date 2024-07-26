@@ -2,10 +2,11 @@ package com.mohamedkhan.economymanagercompose.database
 
 import android.content.Context
 import android.graphics.Paint
+import android.util.Log
 import android.widget.Toast
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.LiveData
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -19,90 +20,81 @@ class DataRepository(private val database: DatabaseReference?) {
 
     fun readTransactions(fetcher: DataFetcher<Transaction>) {
         val transactions = mutableListOf<Transaction>()
-        if (database != null) {
-            database.child(Constant.TRANSACTION_PATH)
-                .addValueEventListener(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        for (s in snapshot.children) {
-                            val transaction = s.getValue(Transaction::class.java)
-                            if (transaction != null) {
-                                transactions.add(transaction)
-                            }
-                        }
-                        fetcher.getDataFromFireBase(transactions)
+        database?.child(Constant.TRANSACTION_PATH)?.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (s in snapshot.children) {
+                    val transaction = s.getValue(Transaction::class.java)
+                    if (transaction != null) {
+                        transactions.add(transaction)
                     }
+                }
+                fetcher.getDataFromFireBase(transactions)
+            }
 
-                    override fun onCancelled(error: DatabaseError) {
-                        TODO("Not yet implemented")
-                    }
-                })
-        }
+            override fun onCancelled(error: DatabaseError) {
+                Log.d("Firebase Error", error.message)
+            }
+        })
     }
 
     fun readParties(fetcher: DataFetcher<Party>) {
         val parties = mutableListOf<Party>()
-        if (database != null) {
-            database.child(Constant.PARTY_PATH).addValueEventListener(object: ValueEventListener{
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    for (s in snapshot.children) {
-                        val party = s.getValue(Party::class.java)
-                        if (party != null) {
-                            parties.add(party)
-                        }
+        database?.child(Constant.PARTY_PATH)?.addValueEventListener(object: ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (s in snapshot.children) {
+                    val party = s.getValue(Party::class.java)
+                    if (party != null) {
+                        parties.add(party)
                     }
-                    fetcher.getDataFromFireBase(parties)
                 }
+                fetcher.getDataFromFireBase(parties)
+            }
 
-                override fun onCancelled(error: DatabaseError) {
-                    TODO("Not yet implemented")
-                }
+            override fun onCancelled(error: DatabaseError) {
+                Log.d("Firebase Error", error.message)
+            }
 
-            })
-        }
+        })
     }
 
     fun readBanks(fetcher: DataFetcher<Bank>) {
         val banks = mutableListOf<Bank>()
-        if (database != null) {
-            database.child(Constant.ACCOUNT_PATH).addValueEventListener(object: ValueEventListener{
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    for (s in snapshot.children) {
-                        val bank = s.getValue(Bank::class.java)
-                        if (bank!= null) {
-                            banks.add(bank)
-                        }
+        database?.child(Constant.ACCOUNT_PATH)?.addValueEventListener(object: ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (s in snapshot.children) {
+                    val bank = s.getValue(Bank::class.java)
+                    if (bank!= null) {
+                        banks.add(bank)
                     }
-                    fetcher.getDataFromFireBase(banks)
                 }
+                fetcher.getDataFromFireBase(banks)
+            }
 
-                override fun onCancelled(error: DatabaseError) {
-                    TODO("Not yet implemented")
-                }
+            override fun onCancelled(error: DatabaseError) {
+                Log.d("Firebase Error", error.message)
+            }
 
-            })
-        }
+        })
     }
 
     fun readCategories(fetcher: DataFetcher<Category>) {
         val categories = mutableListOf<Category>()
-        if (database != null) {
-            database.child(Constant.CATEGORY_PATH).addValueEventListener(object: ValueEventListener{
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    for (s in snapshot.children) {
-                        val category = s.getValue(Category::class.java)
-                        if (category != null) {
-                            categories.add(category)
-                        }
+        database?.child(Constant.CATEGORY_PATH)?.addValueEventListener(object: ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (s in snapshot.children) {
+                    val category = s.getValue(Category::class.java)
+                    if (category != null) {
+                        categories.add(category)
                     }
-                    fetcher.getDataFromFireBase(categories)
                 }
+                fetcher.getDataFromFireBase(categories)
+            }
 
-                override fun onCancelled(error: DatabaseError) {
-                    TODO("Not yet implemented")
-                }
+            override fun onCancelled(error: DatabaseError) {
+                Log.d("Firebase Error", error.message)
+            }
 
-            })
-        }
+        })
     }
 
     fun getUniqueDatabaseId(): String? {
@@ -118,54 +110,43 @@ class DataRepository(private val database: DatabaseReference?) {
     fun addTransaction(
         context: Context,
         transaction: Transaction,
-        categoryLiveData: LiveData<List<Category>>,
-        partiesLiveData: LiveData<List<Party>>,
-        bankLiveData: LiveData<List<Bank>>,
+        partiesLiveData: SnapshotStateList<Party>,
+        bankLiveData: SnapshotStateList<Bank>,
         isLoan: Boolean,
         isTransactionCompleted: (Boolean) -> Unit
     ) {
         when (transaction.type) {
             Constant.SPENT -> {
-                val banks = bankLiveData.value?.filter {
+                val banks = bankLiveData.filter {
                     transaction.from == it.id
                 }
-                val bank = banks?.get(0)
-                val oldBalance = bank?.balance?.toDouble()
+                val bank = banks[0]
+                val oldBalance = bank.balance.toDouble()
                 val amount = transaction.amount.toDouble()
-                val newBalance = oldBalance?.minus(amount)
-                bank?.balance = newBalance.toString()
-                if (bank != null) {
-                    upsertAccount(bank)
-                    upsertTransaction(transaction, context)
-                    isTransactionCompleted(true)
-                } else {
-                    Toast.makeText(context, "Error in updating transaction", Toast.LENGTH_LONG).show()
-                    isTransactionCompleted(false)
-                }
+                val newBalance = oldBalance.minus(amount)
+                bank.balance = newBalance.toString()
+                upsertAccount(bank)
+                upsertTransaction(transaction, context)
+                isTransactionCompleted(true)
             }
 
             Constant.BANK_TO_BANK -> {
-                val banks = bankLiveData.value?.filter {
+                val banks = bankLiveData.filter {
                     transaction.from == it.id || transaction.to == it.id
                 }
-                val fromBank = banks?.get(0)
-                val toBank = banks?.get(1)
-                val fromOldBalance = fromBank?.balance?.toDouble()
-                val toOldBalance = toBank?.balance?.toDouble()
-                val fromNewBalance = fromOldBalance?.minus(transaction.amount.toDouble())
-                val toNewBalance = toOldBalance?.plus(transaction.amount.toDouble())
-                if (fromNewBalance != null && fromNewBalance >= 0) {
+                val fromBank = banks[0]
+                val toBank = banks[1]
+                val fromOldBalance = fromBank.balance.toDouble()
+                val toOldBalance = toBank.balance.toDouble()
+                val fromNewBalance = fromOldBalance.minus(transaction.amount.toDouble())
+                val toNewBalance = toOldBalance.plus(transaction.amount.toDouble())
+                if (fromNewBalance >= 0) {
                     fromBank.balance = fromNewBalance.toString()
-                    toBank?.balance = toNewBalance.toString()
-                    if (fromBank!= null && toBank != null) {
-                        upsertAccount(fromBank)
-                        upsertAccount(toBank)
-                        upsertTransaction(transaction, context)
-                        isTransactionCompleted(true)
-                    } else {
-                        Toast.makeText(context, "Error in updating transaction", Toast.LENGTH_LONG).show()
-                        isTransactionCompleted(false)
-                    }
+                    toBank.balance = toNewBalance.toString()
+                    upsertAccount(fromBank)
+                    upsertAccount(toBank)
+                    upsertTransaction(transaction, context)
+                    isTransactionCompleted(true)
 
                 } else {
                     Toast.makeText(context, "Insufficient balance", Toast.LENGTH_LONG).show()
@@ -174,45 +155,35 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
             Constant.BANK_TO_PARTY -> {
-                val bank = bankLiveData.value?.filter {
+                val bank = bankLiveData.filter {
                     transaction.from == it.id
                 }
-                val party = partiesLiveData.value?.filter {
+                val party = partiesLiveData.filter {
                     transaction.to == it.id
                 }
-                val fromBank = bank?.get(0)
-                val toParty = party?.get(1)
-                val fromOldBalance = fromBank?.balance?.toDouble()
-                val toOldBalance = toParty?.balance?.toDouble()
+                val fromBank = bank[0]
+                val toParty = party[1]
+                val fromOldBalance = fromBank.balance.toDouble()
+                val toOldBalance = toParty.balance.toDouble()
                 val amountDouble = transaction.amount.toDouble()
-                val fromNewBalance = fromOldBalance?.minus(amountDouble)
-                if (fromNewBalance != null && fromNewBalance >= 0) {
+                val fromNewBalance = fromOldBalance.minus(amountDouble)
+                if (fromNewBalance >= 0) {
                     if (isLoan) {// kadan kuduthal
-                        val toNewBalance = toOldBalance?.plus(amountDouble)
-                        toParty?.balance = toNewBalance.toString()
+                        val toNewBalance = toOldBalance.plus(amountDouble)
+                        toParty.balance = toNewBalance.toString()
                         fromBank.balance = fromNewBalance.toString()
-                        if (fromBank != null && toParty != null) {
-                            upsertAccount(fromBank)
-                            upsertParty(toParty)
-                            upsertTransaction(transaction, context)
-                            isTransactionCompleted(true)
-                        } else {
-                            Toast.makeText(context, "Error in updating transaction", Toast.LENGTH_LONG).show()
-                            isTransactionCompleted(false)
-                        }
+                        upsertAccount(fromBank)
+                        upsertParty(toParty)
+                        upsertTransaction(transaction, context)
+                        isTransactionCompleted(true)
                     } else {// kadan adaithal
-                        val toNewBalance = toOldBalance?.minus(amountDouble)
-                        toParty?.balance = toNewBalance.toString()
+                        val toNewBalance = toOldBalance.minus(amountDouble)
+                        toParty.balance = toNewBalance.toString()
                         fromBank.balance = fromNewBalance.toString()
-                        if (fromBank != null && toParty != null) {
-                            upsertAccount(fromBank)
-                            upsertParty(toParty)
-                            upsertTransaction(transaction, context)
-                            isTransactionCompleted(true)
-                        } else {
-                            Toast.makeText(context, "Error in updating transaction", Toast.LENGTH_LONG).show()
-                            isTransactionCompleted(false)
-                        }
+                        upsertAccount(fromBank)
+                        upsertParty(toParty)
+                        upsertTransaction(transaction, context)
+                        isTransactionCompleted(true)
                     }
                 } else {
                     Toast.makeText(context, "Insufficient balance", Toast.LENGTH_LONG).show()
@@ -239,128 +210,98 @@ class DataRepository(private val database: DatabaseReference?) {
 //            }
 
             Constant.PARTY_TO_BANK -> {
-                val party = partiesLiveData.value?.filter {
+                val party = partiesLiveData.filter {
                     transaction.from == it.id
                 }
-                val bank = bankLiveData.value?.filter {
+                val bank = bankLiveData.filter {
                     transaction.to == it.id
                 }
-                val fromParty = party?.get(0)
-                val toBank = bank?.get(0)
-                val fromOldBalance = fromParty?.balance?.toDouble()
-                val toOldBalance = toBank?.balance?.toDouble()
+                val fromParty = party[0]
+                val toBank = bank[0]
+                val fromOldBalance = fromParty.balance.toDouble()
+                val toOldBalance = toBank.balance.toDouble()
                 val amountDouble = transaction.amount.toDouble()
-                val fromNewBalance = fromOldBalance?.minus(amountDouble)
-                if (fromNewBalance != null && fromNewBalance >= 0){
+                val fromNewBalance = fromOldBalance.minus(amountDouble)
+                if (fromNewBalance >= 0){
                     if (isLoan) {
-                        val toNewBalance = toOldBalance?.plus(amountDouble)
-                        toBank?.balance = toNewBalance.toString()
-                        if(fromParty != null && toBank != null) {
-                            upsertParty(fromParty)
-                            upsertAccount(toBank)
-                            upsertTransaction(transaction, context)
-                            isTransactionCompleted(true)
-                        } else {
-                            Toast.makeText(context, "Error in updating transaction", Toast.LENGTH_LONG).show()
-                            isTransactionCompleted(false)
-                        }
+                        val toNewBalance = toOldBalance.plus(amountDouble)
+                        toBank.balance = toNewBalance.toString()
+                        upsertParty(fromParty)
+                        upsertAccount(toBank)
+                        upsertTransaction(transaction, context)
+                        isTransactionCompleted(true)
                     } else {
-                        val fromNewBalance1 = fromOldBalance?.plus(amountDouble)
-                        val toNewBalance = toOldBalance?.plus(amountDouble)
-                        fromParty?.balance = fromNewBalance1.toString()
-                        toBank?.balance = toNewBalance.toString()
-                        if(fromParty != null && toBank != null) {
-                            upsertParty(fromParty)
-                            upsertAccount(toBank)
-                            upsertTransaction(transaction, context)
-                            isTransactionCompleted(true)
-                        } else {
-                            Toast.makeText(context, "Error in updating transaction", Toast.LENGTH_LONG).show()
-                            isTransactionCompleted(false)
-                        }
+                        val fromNewBalance1 = fromOldBalance.plus(amountDouble)
+                        val toNewBalance = toOldBalance.plus(amountDouble)
+                        fromParty.balance = fromNewBalance1.toString()
+                        toBank.balance = toNewBalance.toString()
+                        upsertParty(fromParty)
+                        upsertAccount(toBank)
+                        upsertTransaction(transaction, context)
+                        isTransactionCompleted(true)
                     }
                 }
             }
 
             Constant.ADD_BALANCE_TO_BANK -> {
-                val bank = bankLiveData?.value?.filter {
+                val bank = bankLiveData.filter {
                     transaction.to == it.id
                 }
-                val toBank = bank?.get(0)
-                val toOldBalance = toBank?.balance?.toDouble()
+                val toBank = bank[0]
+                val toOldBalance = toBank.balance.toDouble()
                 val amountDouble = transaction.amount.toDouble()
-                val toNewBalance = toOldBalance?.plus(amountDouble)
-                if (toBank != null) {
-                    toBank?.balance = toNewBalance.toString()
-                    upsertAccount(toBank)
-                    upsertTransaction(transaction, context)
-                    isTransactionCompleted(true)
-                } else {
-                    Toast.makeText(context, "Error in updating transaction", Toast.LENGTH_LONG).show()
-                    isTransactionCompleted(false)
-                }
+                val toNewBalance = toOldBalance.plus(amountDouble)
+                toBank.balance = toNewBalance.toString()
+                upsertAccount(toBank)
+                upsertTransaction(transaction, context)
+                isTransactionCompleted(true)
             }
 
             Constant.REDUCE_BALANCE_FROM_BANK -> {
-                val bank = bankLiveData?.value?.filter {
+                val bank = bankLiveData.filter {
                     transaction.from == it.id
                 }
-                val fromBank = bank?.get(0)
-                val fromOldBalance = fromBank?.balance?.toDouble()
+                val fromBank = bank[0]
+                val fromOldBalance = fromBank.balance.toDouble()
                 val amountDouble = transaction.amount.toDouble()
-                val toNewBalance = fromOldBalance?.minus(amountDouble)
-                if (fromBank != null) {
-                    fromBank?.balance = toNewBalance.toString()
-                    upsertAccount(fromBank)
-                    upsertTransaction(transaction, context)
-                    isTransactionCompleted(true)
-                } else {
-                    Toast.makeText(context, "Error in updating transaction", Toast.LENGTH_LONG).show()
-                    isTransactionCompleted(false)
-                }
+                val toNewBalance = fromOldBalance.minus(amountDouble)
+                fromBank.balance = toNewBalance.toString()
+                upsertAccount(fromBank)
+                upsertTransaction(transaction, context)
+                isTransactionCompleted(true)
             }
 
             Constant.ADD_BALANCE_TO_PARTY -> {
-                val party = partiesLiveData?.value?.filter {
+                val party = partiesLiveData.filter {
                     transaction.to == it.id
                 }
-                val toParty = party?.get(0)
-                val toOldBalance = toParty?.balance?.toDouble()
+                val toParty = party[0]
+                val toOldBalance = toParty.balance.toDouble()
                 val amountDouble = transaction.amount.toDouble()
-                val toNewBalance = toOldBalance?.plus(amountDouble)
-                if (toParty != null) {
-                    toParty?.balance = toNewBalance.toString()
-                    upsertParty(toParty)
-                    upsertTransaction(transaction, context)
-                    isTransactionCompleted(true)
-                } else {
-                    Toast.makeText(context, "Error in updating transaction", Toast.LENGTH_LONG).show()
-                    isTransactionCompleted(false)
-                }
+                val toNewBalance = toOldBalance.plus(amountDouble)
+                toParty.balance = toNewBalance.toString()
+                upsertParty(toParty)
+                upsertTransaction(transaction, context)
+                isTransactionCompleted(true)
             }
 
             Constant.REDUCE_BALANCE_FROM_PARTY -> {
-                val party = partiesLiveData?.value?.filter {
+                val party = partiesLiveData.filter {
                     transaction.from == it.id
                 }
-                val fromParty = party?.get(0)
-                val fromOldBalance = fromParty?.balance?.toDouble()
+                val fromParty = party[0]
+                val fromOldBalance = fromParty.balance.toDouble()
                 val amountDouble = transaction.amount.toDouble()
-                val toNewBalance = fromOldBalance?.minus(amountDouble)
-                if (fromParty != null) {
-                    fromParty?.balance = toNewBalance.toString()
-                    upsertParty(fromParty)
-                    upsertTransaction(transaction, context)
-                    isTransactionCompleted(true)
-                } else {
-                    Toast.makeText(context, "Error in updating transaction", Toast.LENGTH_LONG).show()
-                    isTransactionCompleted(false)
-                }
+                val toNewBalance = fromOldBalance.minus(amountDouble)
+                fromParty.balance = toNewBalance.toString()
+                upsertParty(fromParty)
+                upsertTransaction(transaction, context)
+                isTransactionCompleted(true)
             }
         }
     }
 
-    fun upsertTransaction(transaction: Transaction, context: Context) {
+    private fun upsertTransaction(transaction: Transaction, context: Context) {
         database?.child(Constant.TRANSACTION_PATH)?.child(transaction.id)?.setValue(transaction)
         Toast.makeText(context, "Transaction updated", Toast.LENGTH_LONG).show()
     }
