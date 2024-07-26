@@ -164,6 +164,10 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
+    fun upsertTransaction(transaction: Transaction, context: Context) {
+        repository.upsertTransaction(transaction, context)
+    }
+
     fun addCategory(category: String): String {
         return repository.upsertCategory(category)
     }

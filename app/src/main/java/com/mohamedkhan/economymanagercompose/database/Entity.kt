@@ -40,10 +40,10 @@ data class Type(
 
 data class Transaction(
     val id: String,
-    val subject: String,
+    var subject: String,
     val amount: String,
     val category: String,
-    val date: String,
+    var date: String,
     val timeStamp: String,
     val type: String,
     val from: String,

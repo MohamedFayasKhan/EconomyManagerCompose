@@ -192,17 +192,21 @@ fun ChartDuration(durationChanged: MutableState<Int>, onComplete: (String) -> Un
 fun IncomeExpenseCard(viewModel: DataViewModel) {
     val income = viewModel.incomeLiveData.observeAsState()
     val expense = viewModel.expenseLiveData.observeAsState()
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-        CardIncomeExpense(
-            Icons.Filled.KeyboardArrowUp,
-            stringResource(id = R.string.net_income),
-            income.value.toString()
-        )
-        CardIncomeExpense(
-            Icons.Filled.KeyboardArrowDown,
-            stringResource(R.string.net_expense),
-            expense.value.toString()
-        )
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Box(modifier = Modifier.weight(1f)) {
+            CardIncomeExpense(
+                Icons.Filled.KeyboardArrowUp,
+                stringResource(id = R.string.net_income),
+                income.value.toString()
+            )
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            CardIncomeExpense(
+                Icons.Filled.KeyboardArrowDown,
+                stringResource(R.string.net_expense),
+                expense.value.toString()
+            )
+        }
     }
 }
 

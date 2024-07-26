@@ -520,7 +520,7 @@ fun AddButton(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun <T> DropDownCategory(
+private fun <T> DropDownCategory(
     expanded: Boolean,
     id: MutableState<String>,
     value: MutableState<String>,

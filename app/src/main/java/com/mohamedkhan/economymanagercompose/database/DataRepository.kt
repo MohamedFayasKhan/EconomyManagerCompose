@@ -301,7 +301,7 @@ class DataRepository(private val database: DatabaseReference?) {
         }
     }
 
-    private fun upsertTransaction(transaction: Transaction, context: Context) {
+    fun upsertTransaction(transaction: Transaction, context: Context) {
         database?.child(Constant.TRANSACTION_PATH)?.child(transaction.id)?.setValue(transaction)
         Toast.makeText(context, "Transaction updated", Toast.LENGTH_LONG).show()
     }

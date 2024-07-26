@@ -2,9 +2,12 @@ package com.mohamedkhan.economymanagercompose.screen
 
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -237,9 +240,11 @@ private fun shareTransaction(
     context.startActivity(shareIntent)
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TransactionsLazyList(filterList: MutableState<List<Transaction>?>, viewModel: DataViewModel) {
     var showDialog by remember { mutableStateOf(false) }
+    var showOptions by remember { mutableStateOf(false) }
     val transactions = viewModel.transactionLiveData
     var selectedItem by remember { mutableStateOf(Transaction()) }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -251,10 +256,16 @@ fun TransactionsLazyList(filterList: MutableState<List<Transaction>?>, viewModel
 
         items(list) { transaction ->
             Box(
-                modifier = Modifier.clickable {
-                    showDialog = true
-                    selectedItem = transaction
-                }
+                modifier = Modifier.combinedClickable(
+                    onClick = {
+                        showDialog = true
+                        selectedItem = transaction
+                    },
+                    onLongClick = {
+                        showOptions = true
+                        selectedItem = transaction
+                    }
+                )
             ) {
                 Row(
                     modifier = Modifier
@@ -308,6 +319,115 @@ fun TransactionsLazyList(filterList: MutableState<List<Transaction>?>, viewModel
             viewModel = viewModel,
             transaction = selectedItem,
             onDismiss = { showDialog = false })
+    }
+    if (showOptions) {
+        TransactionOptionDialog(viewModel, selectedItem) {
+            showOptions = false
+        }
+    }
+}
+
+@Composable
+private fun TransactionOptionDialog(
+    viewModel: DataViewModel,
+    selectedItem: Transaction,
+    onDismiss: () -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    var type by remember { mutableStateOf("")}
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(30.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(text = "Edit Date", modifier = Modifier
+                    .padding(10.dp)
+                    .clickable {
+                        showDialog = true
+                        type = "Date"
+                    })
+                Text(text = "Edit Subject", modifier = Modifier
+                    .padding(10.dp)
+                    .clickable {
+                        showDialog = true
+                        type = "Subject"
+                    })
+            }
+        }
+    }
+    if (showDialog) {
+        ShowEditTransactionDialog(viewModel, type, selectedItem) {
+            showDialog = false
+            onDismiss()
+        }
+    }
+}
+
+@Composable
+fun ShowEditTransactionDialog(
+    viewModel: DataViewModel,
+    type: String,
+    selectedItem: Transaction,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    var subject = remember {
+        mutableStateOf(selectedItem.subject)
+    }
+    var date = remember {
+        mutableStateOf(selectedItem.date)
+    }
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(30.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                val head = if (type.equals("Date")) "Edit Transaction Date" else "Edit Transaction Subject"
+                Text(text = head)
+                Spacer(modifier = Modifier.size(10.dp))
+                if (type.equals("Date")) {
+                    TextFieldDate(date = date)
+                    Button(onClick = {
+                        if (date.value != "") {
+                            selectedItem.date = date.value
+                            viewModel.upsertTransaction(selectedItem, context)
+                            onDismiss()
+                        } else {
+                            Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
+                        Text(text = "Save")
+                    }
+                } else {
+                    TextFieldSubject(subject = subject)
+                    Button(onClick = {
+                        if (subject.value != "") {
+                            selectedItem.subject = subject.value
+                            viewModel.upsertTransaction(selectedItem, context)
+                            onDismiss()
+                        } else {
+                            Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
+                        Text(text = "Save")
+                    }
+                }
+            }
+        }
     }
 }
 
