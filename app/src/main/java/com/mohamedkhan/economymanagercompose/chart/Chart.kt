@@ -165,9 +165,6 @@ fun PieChart(
     var circleCenter by remember {
         mutableStateOf(Offset.Zero)
     }
-    val inputList by remember {
-        mutableStateOf(input)
-    }
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
@@ -254,10 +251,10 @@ fun PieChart(
             centerText,
             modifier = Modifier
                 .width(Dp(innerRadius/1.5f))
-                .padding(25.dp),
+                .padding(4.dp),
             fontWeight = FontWeight.SemiBold,
             color = Color.Black,
-            fontSize = 17.sp,
+            fontSize = 14.sp,
             textAlign = TextAlign.Center
         )
     }
