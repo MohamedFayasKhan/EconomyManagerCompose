@@ -8,7 +8,7 @@ data class Bank(
     var name: String,
     var number: String,
     var balance: String,
-    val isActive: Boolean
+    val active: Boolean
 ) {
     constructor() : this(null.toString(), null.toString(), null.toString(), null.toString(), false)
 }
@@ -18,7 +18,7 @@ data class Party(
     var name: String,
     var number: String,
     var balance: String,
-    val isActive: Boolean,
+    val active: Boolean,
     var receivable: Boolean
 ) {
     constructor(): this(null.toString(), null.toString(), null.toString(), null.toString(), false, false)

@@ -5,10 +5,12 @@ import android.app.Application
 import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.mohamedkhan.economymanagercompose.chart.PieChartInput
 import com.mohamedkhan.economymanagercompose.constant.Constant
 import com.mohamedkhan.economymanagercompose.database.Bank
 import com.mohamedkhan.economymanagercompose.database.Category
@@ -25,7 +27,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-class DataViewModel(application: Application): AndroidViewModel(application) {
+class DataViewModel(application: Application) : AndroidViewModel(application) {
 
     private lateinit var repository: DataRepository
     private val _transactionLiveData = mutableStateListOf<Transaction>()
@@ -51,21 +53,25 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
     val totalLiveData: LiveData<String> get() = _totalLiveData
     private val _durationCategoryLiveData = MutableLiveData<List<Pair<String, Double>>>()
     val durationCategoryLiveData: LiveData<List<Pair<String, Double>>> get() = _durationCategoryLiveData
+    private val _categoryPieData = MutableLiveData<List<PieChartInput>>()
+    val categoryPieData: LiveData<List<PieChartInput>> get() = _categoryPieData
 
     fun initDatabase(uid: String?) {
         val database = uid?.let { Database.getDataBase().child(it).child(Constant.DATAS) }
         repository = DataRepository(database)
-        _typeLiveData.addAll(listOf<Type>(
-            Type(Constant.SPENT,Constant.SPENT_VALUE),
-            Type(Constant.BANK_TO_BANK,Constant.BANK_TO_BANK_VALUE),
-            Type(Constant.BANK_TO_PARTY,Constant.BANK_TO_PARTY_VALUE),
-            //            Type(Constant.PARTY_TO_PARTY,Constant.PARTY_TO_PARTY_VALUE),
-            Type(Constant.PARTY_TO_BANK,Constant.PARTY_TO_BANK_VALUE),
-            Type(Constant.ADD_BALANCE_TO_BANK,Constant.ADD_BALANCE_TO_BANK_VALUE),
-            Type(Constant.REDUCE_BALANCE_FROM_BANK,Constant.REDUCE_BALANCE_FROM_BANK_VALUE),
-            Type(Constant.ADD_BALANCE_TO_PARTY,Constant.ADD_BALANCE_TO_PARTY_VALUE),
-            Type(Constant.REDUCE_BALANCE_FROM_PARTY,Constant.REDUCE_BALANCE_FROM_PARTY_VALUE)
-        ))
+        _typeLiveData.addAll(
+            listOf<Type>(
+                Type(Constant.SPENT, Constant.SPENT_VALUE),
+                Type(Constant.BANK_TO_BANK, Constant.BANK_TO_BANK_VALUE),
+                Type(Constant.BANK_TO_PARTY, Constant.BANK_TO_PARTY_VALUE),
+                //            Type(Constant.PARTY_TO_PARTY,Constant.PARTY_TO_PARTY_VALUE),
+                Type(Constant.PARTY_TO_BANK, Constant.PARTY_TO_BANK_VALUE),
+                Type(Constant.ADD_BALANCE_TO_BANK, Constant.ADD_BALANCE_TO_BANK_VALUE),
+                Type(Constant.REDUCE_BALANCE_FROM_BANK, Constant.REDUCE_BALANCE_FROM_BANK_VALUE),
+                Type(Constant.ADD_BALANCE_TO_PARTY, Constant.ADD_BALANCE_TO_PARTY_VALUE),
+                Type(Constant.REDUCE_BALANCE_FROM_PARTY, Constant.REDUCE_BALANCE_FROM_PARTY_VALUE)
+            )
+        )
     }
 
     fun performTasks(onComplete: () -> Unit) {
@@ -133,7 +139,7 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    private fun readCategories(){
+    private fun readCategories() {
         viewModelScope.launch(Dispatchers.IO) {
             val fetcher = object : DataFetcher<Category> {
                 override fun getDataFromFireBase(list: List<Category>) {
@@ -158,14 +164,29 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
         return repository.getTimestamp()
     }
 
-    fun addTransaction(transaction: Transaction, context: Context, checked: Boolean, isTransactionCompleted: (Boolean) -> Unit) {
-        repository.addTransaction(context, transaction, partiesLiveData, bankLiveData, checked) {
-            isTransactionCompleted(it)
+    fun addTransaction(
+        transaction: Transaction,
+        context: Context,
+        checked: Boolean,
+        isTransactionCompleted: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            repository.addTransaction(
+                context,
+                transaction,
+                partiesLiveData,
+                bankLiveData,
+                checked
+            ) {
+                isTransactionCompleted(it)
+            }
         }
     }
 
     fun upsertTransaction(transaction: Transaction, context: Context) {
-        repository.upsertTransaction(transaction, context)
+        viewModelScope.launch {
+            repository.upsertTransaction(transaction, context)
+        }
     }
 
     fun addCategory(category: String): String {
@@ -173,17 +194,23 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
     }
 
     fun addBank(bank: Bank) {
-        repository.upsertAccount(bank)
+        viewModelScope.launch {
+            repository.upsertAccount(bank)
+        }
     }
 
     fun addParty(party: Party) {
-        repository.upsertParty(party)
+        viewModelScope.launch {
+            repository.upsertParty(party)
+        }
     }
 
     fun getChartData(duration: String) {
+        viewModelScope.launch {
             val data = mutableListOf<Pair<String, Double>>()
-            _categoryLiveData.forEach { category->
-                var categoryTransaction = _transactionLiveData.filter {transaction ->
+            val dataPie = mutableListOf<PieChartInput>()
+            _categoryLiveData.forEach { category ->
+                var categoryTransaction = _transactionLiveData.filter { transaction ->
                     category.id == transaction.category
                 }
                 val currentYear = Calendar.getInstance().get(Calendar.YEAR)
@@ -192,8 +219,13 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
                 val today = dateFormat.format(currentDate)
                 when (duration) {
                     "This Year" -> {
-                        categoryTransaction = filterTransactionsByDateRange(categoryTransaction, "Jan 01, $currentYear", today)!!
+                        categoryTransaction = filterTransactionsByDateRange(
+                            categoryTransaction,
+                            "Jan 01, $currentYear",
+                            today
+                        )!!
                     }
+
                     "This Month" -> {
                         val lastMonth = Calendar.getInstance()
                         lastMonth.add(Calendar.MONTH, -1)
@@ -203,15 +235,25 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
                         lastDayOfLastMonth.add(Calendar.DAY_OF_MONTH, -1)
                         val lastMonthStart = dateFormat.format(lastMonth.time)
                         val lastMonthEnd = dateFormat.format(lastDayOfLastMonth.time)
-                        categoryTransaction = filterTransactionsByDateRange(categoryTransaction, lastMonthStart, lastMonthEnd)!!
+                        categoryTransaction = filterTransactionsByDateRange(
+                            categoryTransaction,
+                            lastMonthStart,
+                            lastMonthEnd
+                        )!!
                     }
+
                     "Last 7 Days" -> {
                         val sevenDaysAgo = Calendar.getInstance()
                         sevenDaysAgo.add(Calendar.DAY_OF_MONTH, -7)
                         val sevenDaysAgoDate = dateFormat.format(sevenDaysAgo.time)
                         categoryTransaction =
-                            filterTransactionsByDateRange(categoryTransaction, sevenDaysAgoDate, today)!!
+                            filterTransactionsByDateRange(
+                                categoryTransaction,
+                                sevenDaysAgoDate,
+                                today
+                            )!!
                     }
+
                     "Today" -> {
                         categoryTransaction =
                             filterTransactionsByDateRange(categoryTransaction, today, today)!!
@@ -223,51 +265,63 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
                 }
                 if (categoryTransaction.isNotEmpty()) {
                     data.add(Pair<String, Double>(category.name, amount))
+                    val color = kotlin.random.Random.nextLong(0xFFFFFFFF)
+                    dataPie.add(PieChartInput(color = Color(color), amount.toInt(), category.name))
                 }
             }
             _durationCategoryLiveData.value = data
+            _categoryPieData.value = dataPie
+        }
     }
 
     @SuppressLint("DefaultLocale")
     fun calculateIncome() {
-        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-        val currentDate = Calendar.getInstance().time
-        val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.getDefault())
-        val today = dateFormat.format(currentDate)
-        var incomeData = _transactionLiveData.filter { it.income && it.type != Constant.BANK_TO_BANK }
-        incomeData = filterTransactionsByDateRange(incomeData, "Jan 01, $currentYear", today)!!
-        var value: Double = 0.0
-        if (incomeData.isNotEmpty()) {
-            for (data in incomeData.distinct()) {
-                value += data.amount.toDouble()
+        viewModelScope.launch {
+            val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+            val currentDate = Calendar.getInstance().time
+            val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.getDefault())
+            val today = dateFormat.format(currentDate)
+            var incomeData =
+                _transactionLiveData.filter { it.income && it.type != Constant.BANK_TO_BANK }
+            incomeData = filterTransactionsByDateRange(incomeData, "Jan 01, $currentYear", today)!!
+            var value: Double = 0.0
+            if (incomeData.isNotEmpty()) {
+                for (data in incomeData.distinct()) {
+                    value += data.amount.toDouble()
+                }
             }
+            _incomeLiveData.value = String.format("%.2f", value)
         }
-        _incomeLiveData.value = String.format("%.2f", value)
     }
 
     @SuppressLint("DefaultLocale")
     fun calculateExpense() {
-        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-        val currentDate = Calendar.getInstance().time
-        val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.getDefault())
-        val today = dateFormat.format(currentDate)
-        var expenseData = _transactionLiveData.filter { !it.income }
-        expenseData = filterTransactionsByDateRange(expenseData, "Jan 01, $currentYear", today)!!
-        var value: Double = 0.0
-        if (!expenseData.isNullOrEmpty()) {
-            for (data in expenseData.distinct()) {
-                value += data.amount.toDouble()
+        viewModelScope.launch {
+            val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+            val currentDate = Calendar.getInstance().time
+            val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.getDefault())
+            val today = dateFormat.format(currentDate)
+            var expenseData = _transactionLiveData.filter { !it.income }
+            expenseData =
+                filterTransactionsByDateRange(expenseData, "Jan 01, $currentYear", today)!!
+            var value: Double = 0.0
+            if (!expenseData.isNullOrEmpty()) {
+                for (data in expenseData.distinct()) {
+                    value += data.amount.toDouble()
+                }
             }
+            _expenseLiveData.value = String.format("%.2f", value)
         }
-        _expenseLiveData.value = String.format("%.2f", value)
     }
 
-    fun calculateTotalAmount(){
-        var value: Double = 0.0
-        _banksLiveData.distinct().forEach {
-            value += it.balance.toDouble()
+    fun calculateTotalAmount() {
+        viewModelScope.launch {
+            var value: Double = 0.0
+            _banksLiveData.distinct().forEach {
+                value += it.balance.toDouble()
+            }
+            _totalLiveData.value = String.format(Locale.getDefault(), "%.2f", value)
         }
-        _totalLiveData.value = String.format(Locale.getDefault(), "%.2f", value)
     }
 
     private fun filterTransactionsByDateRange(
@@ -282,6 +336,157 @@ class DataViewModel(application: Application): AndroidViewModel(application) {
             val s = it.date
             val transactionDate: Date = dateFormat.parse(it.date) ?: return@filter false
             transactionDate in start..end
+        }
+    }
+
+    fun deleteTransaction(transaction: Transaction, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            when (transaction.type) {
+                Constant.SPENT -> {
+                    val banks = _banksLiveData.filter { it.id == transaction.from }
+                    val fromBank = banks[0]
+                    val fromBalance = fromBank.balance.toDouble()
+                    val fromNewBalance = fromBalance + transaction.amount.toDouble()
+                    fromBank.balance = fromNewBalance.toString()
+                    repository.upsertAccount(fromBank)
+                    repository.deleteTransaction(transaction)
+                    onComplete(true)
+                }
+
+                Constant.BANK_TO_BANK -> {
+                    val banksFrom = _banksLiveData.filter { it.id == transaction.from }
+                    val banksTo = _banksLiveData.filter { it.id == transaction.to }
+                    val fromBank = banksFrom[0]
+                    val toBank = banksTo[0]
+                    val fromBalance = fromBank.balance.toDouble()
+                    val toBalance = toBank.balance.toDouble()
+                    val fromNewBalance = fromBalance + transaction.amount.toDouble()
+                    val toNewBalance = toBalance - transaction.amount.toDouble()
+                    if (toNewBalance >= 0) {
+                        fromBank.balance = fromNewBalance.toString()
+                        toBank.balance = toNewBalance.toString()
+                        repository.upsertAccount(fromBank)
+                        repository.upsertAccount(toBank)
+                        repository.deleteTransaction(transaction)
+                        onComplete(true)
+                    } else {
+                        onComplete(false)
+                    }
+                }
+
+                Constant.ADD_BALANCE_TO_BANK -> {
+                    val banks = _banksLiveData.filter { it.id == transaction.to }
+                    val toBank = banks[0]
+                    val toBalance = toBank.balance.toDouble()
+                    val toNewBalance = toBalance - transaction.amount.toDouble()
+                    if (toNewBalance >= 0) {
+                        toBank.balance = toNewBalance.toString()
+                        repository.upsertAccount(toBank)
+                        repository.deleteTransaction(transaction)
+                        onComplete(true)
+                    } else {
+                        onComplete(false)
+                    }
+                }
+
+                Constant.REDUCE_BALANCE_FROM_BANK -> {
+                    val banks = _banksLiveData.filter { it.id == transaction.from }
+                    val fromBank = banks[0]
+                    val fromBalance = fromBank.balance.toDouble()
+                    val fromNewBalance = fromBalance + transaction.amount.toDouble()
+                    fromBank.balance = fromNewBalance.toString()
+                    repository.upsertAccount(fromBank)
+                    repository.deleteTransaction(transaction)
+                    onComplete(true)
+                }
+
+                Constant.ADD_BALANCE_TO_PARTY -> {
+                    val parties = _partiesLiveData.filter { it.id == transaction.to }
+                    val toParty = parties[0]
+                    val toBalance = toParty.balance.toDouble()
+                    val toNewBalance = toBalance - transaction.amount.toDouble()
+                    if (toNewBalance >= 0) {
+                        toParty.balance = toNewBalance.toString()
+                        repository.upsertParty(toParty)
+                        repository.deleteTransaction(transaction)
+                        onComplete(true)
+                    } else {
+                        onComplete(false)
+                    }
+                }
+
+                Constant.REDUCE_BALANCE_FROM_PARTY -> {
+                    val parties = _partiesLiveData.filter { it.id == transaction.from }
+                    val fromParty = parties[0]
+                    val fromBalance = fromParty.balance.toDouble()
+                    val fromNewBalance = fromBalance + transaction.amount.toDouble()
+                    fromParty.balance = fromNewBalance.toString()
+                    repository.upsertParty(fromParty)
+                    repository.deleteTransaction(transaction)
+                    onComplete(true)
+                }
+
+                Constant.BANK_TO_PARTY -> {
+                    val banks = _banksLiveData.filter { it.id == transaction.from }
+                    val fromBank = banks[0]
+                    val parties = _partiesLiveData.filter { it.id == transaction.to }
+                    val toParty = parties[0]
+                    val fromBalance = fromBank.balance.toDouble()
+                    val toBalance = toParty.balance.toDouble()
+                    val fromNewBalance = fromBalance + transaction.amount.toDouble()
+                    val toNewBalance = toBalance - transaction.amount.toDouble()
+                    fromBank.balance = fromNewBalance.toString()
+                    var isCompleted = false
+                    if (toParty.receivable) {
+//                            kadan kuduthal
+                        if (toNewBalance >= 0) {
+                            toParty.balance = toNewBalance.toString()
+                            isCompleted = true
+                        }
+                    } else {
+//                            kadan adaithal
+                        toParty.balance = (toBalance + transaction.amount.toDouble()).toString()
+                        isCompleted = true
+                    }
+                    if (isCompleted) {
+                        repository.upsertAccount(fromBank)
+                        repository.upsertParty(toParty)
+                        repository.deleteTransaction(transaction)
+                        onComplete(true)
+                    } else {
+                        onComplete(false)
+                    }
+                }
+
+                Constant.PARTY_TO_BANK -> {
+                    val parties = _partiesLiveData.filter { it.id == transaction.from }
+                    val fromParty = parties[0]
+                    val banks = _banksLiveData.filter { it.id == transaction.to }
+                    val toBank = banks[0]
+                    val fromBalance = fromParty.balance.toDouble()
+                    val toBalance = toBank.balance.toDouble()
+                    val fromNewBalance = fromBalance + transaction.amount.toDouble()
+                    val toNewBalance = toBalance - transaction.amount.toDouble()
+                    if (toNewBalance >= 0) {
+                        toBank.balance = toNewBalance.toString()
+                        if (fromParty.receivable) {
+//                        kadan kolmuthal
+                            fromParty.balance = fromNewBalance.toString()
+                        } else {
+//                        kadan vaanguthal
+                            fromParty.balance =
+                                (fromBalance - transaction.amount.toDouble()).toString()
+                        }
+                        repository.upsertParty(fromParty)
+                        repository.upsertAccount(toBank)
+                        repository.deleteTransaction(transaction)
+                        onComplete(true)
+                    } else {
+                        onComplete(false)
+                    }
+                }
+            }
+            readTransactions()
         }
     }
 }

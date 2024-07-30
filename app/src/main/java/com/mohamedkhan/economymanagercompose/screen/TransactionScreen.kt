@@ -254,7 +254,7 @@ fun TransactionsLazyList(filterList: MutableState<List<Transaction>?>, viewModel
             transactions
         }
 
-        items(list) { transaction ->
+        items(list.distinct()) { transaction ->
             Box(
                 modifier = Modifier.combinedClickable(
                     onClick = {
@@ -359,6 +359,12 @@ private fun TransactionOptionDialog(
                         showDialog = true
                         type = "Subject"
                     })
+                Text(text = "Delete Transaction", modifier = Modifier
+                    .padding(10.dp)
+                    .clickable {
+                        showDialog = true
+                        type = "delete"
+                    })
             }
         }
     }
@@ -396,7 +402,7 @@ fun ShowEditTransactionDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                val head = if (type.equals("Date")) "Edit Transaction Date" else "Edit Transaction Subject"
+                val head = if (type.equals("Date")) "Edit Transaction Date" else if (type.equals("delete")) "Delete Transaction" else "Edit Transaction Subject"
                 Text(text = head)
                 Spacer(modifier = Modifier.size(10.dp))
                 if (type.equals("Date")) {
@@ -411,6 +417,27 @@ fun ShowEditTransactionDialog(
                         }
                     }) {
                         Text(text = "Save")
+                    }
+                } else if (type.equals("delete")) {
+                    Text(text = "Are you sure you want to delete ${selectedItem.subject} from transactions?")
+                    Row(horizontalArrangement = Arrangement.SpaceEvenly) {
+                        Button(onClick = {
+                            onDismiss()
+                        }) {
+                            Text(text = "Cancel")
+                        }
+                        Button(onClick = {
+                            viewModel.deleteTransaction(transaction = selectedItem) {status ->
+                                if (status) {
+                                    Toast.makeText(context, "Transaction deleted", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "Transaction not deleted\nInsufficient amount", Toast.LENGTH_SHORT).show()
+                                }
+                                onDismiss()
+                            }
+                        }) {
+                            Text(text = "Delete")
+                        }
                     }
                 } else {
                     TextFieldSubject(subject = subject)

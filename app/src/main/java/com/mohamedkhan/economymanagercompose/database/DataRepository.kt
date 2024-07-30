@@ -58,9 +58,9 @@ class DataRepository(private val database: DatabaseReference?) {
     }
 
     fun readBanks(fetcher: DataFetcher<Bank>) {
-        val banks = mutableListOf<Bank>()
         database?.child(Constant.ACCOUNT_PATH)?.addValueEventListener(object: ValueEventListener{
             override fun onDataChange(snapshot: DataSnapshot) {
+                val banks = mutableListOf<Bank>()
                 for (s in snapshot.children) {
                     val bank = s.getValue(Bank::class.java)
                     if (bank!= null) {
@@ -338,5 +338,9 @@ class DataRepository(private val database: DatabaseReference?) {
 
     fun updateTransactionDate(id: String, date: String) {
         database?.child(Constant.TRANSACTION_PATH)?.child(id)?.child("date")?.setValue(date)
+    }
+
+    fun deleteTransaction(transaction: Transaction) {
+        database?.child(Constant.TRANSACTION_PATH)?.child(transaction.id)?.removeValue()
     }
 }

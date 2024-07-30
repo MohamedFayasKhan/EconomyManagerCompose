@@ -40,13 +40,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.mohamedkhan.economymanagercompose.R
 import com.mohamedkhan.economymanagercompose.chart.BarChart
+import com.mohamedkhan.economymanagercompose.chart.PieChart
 import com.mohamedkhan.economymanagercompose.signin.GoogleAuthClient
 import com.mohamedkhan.economymanagercompose.viewModel.DataViewModel
 
@@ -62,6 +65,7 @@ fun HomeScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
         mutableStateOf(initialValue)
     }
     val durationCategoryChart = viewModel.durationCategoryLiveData.observeAsState()
+    val pieData = viewModel.categoryPieData.observeAsState()
     val textColor = if (isSystemInDarkTheme()) {
         Color.White
     } else {
@@ -83,39 +87,66 @@ fun HomeScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
             viewModel.getChartData(duration)
         }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.categorize_transactions),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(modifier = Modifier.size(10.dp))
-                Box(modifier = Modifier.weight(1f)) {
-                    ChartDuration(durationChanged) { dur ->
-                        duration = dur
-                    }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.categorize_transactions),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(modifier = Modifier.size(10.dp))
+            Box(modifier = Modifier.weight(1f)) {
+                ChartDuration(durationChanged) { dur ->
+                    duration = dur
                 }
             }
-            Spacer(modifier = Modifier.size(16.dp))
+        }
+        Spacer(modifier = Modifier.size(16.dp))
+        Box(modifier = Modifier
+            .fillMaxWidth()) {
             if (durationCategoryChart.value?.isNotEmpty() == true) {
-                BarChart(data = durationCategoryChart.value!!, textColor = textColor, barColor = textColor)
+                BarChart(
+                    data = durationCategoryChart.value!!,
+                    textColor = textColor,
+                    barColor = textColor
+                )
             } else {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp),
                     contentAlignment = Alignment.Center
-                ){
-                    Text(text = "Nothing to show",fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold)
+                ) {
+                    Text(
+                        text = "Nothing to show", fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
+        }
+        Spacer(modifier = Modifier.size(16.dp))
+        if (pieData.value?.isNotEmpty() == true) {
+                val height = pxToDp(px = 600f)
+                PieChart(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(height),
+                    input = pieData.value!!,
+                    centerText = "Fayas"
+                )
+        }
 
+    }
+}
+
+@Composable
+fun pxToDp(px: Float): Dp {
+    return with(LocalDensity.current) {
+        px.toDp()
     }
 }
 
