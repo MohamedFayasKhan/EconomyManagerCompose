@@ -52,6 +52,7 @@ import com.mohamedkhan.economymanagercompose.database.Party
 import com.mohamedkhan.economymanagercompose.database.ToggleSwitch
 import com.mohamedkhan.economymanagercompose.signin.GoogleAuthClient
 import com.mohamedkhan.economymanagercompose.viewModel.DataViewModel
+import java.util.Locale
 
 @Composable
 fun PartyScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
@@ -123,7 +124,7 @@ fun PartiesLazyList(filterList: MutableState<List<Party>?>, viewModel: DataViewM
                 }
                 Column(verticalArrangement = Arrangement.Center) {
                     Text(
-                        text = String.format("%.2f", party.balance.toDouble()),
+                        text = String.format(Locale.getDefault(), "%.2f", party.balance.toDouble()),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (party.receivable) Color.Green else Color.Red,
@@ -232,10 +233,10 @@ fun ShowEditPartyDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                val head = if (type.equals("Name")) "Edit Name" else if (type.equals("Number")) "Edit Number" else if (type.equals("Add")) "Add balance" else if(type.equals("Reduce balance")) "Reduce balance" else "Edit Borrower"
+                val head = if (type == "Name") "Edit Name" else if (type == "Number") "Edit Number" else if (type == "Add") "Add balance" else if(type == "Reduce balance") "Reduce balance" else "Edit Borrower"
                 Text(text = head)
                 Spacer(modifier = Modifier.size(10.dp))
-                if (type.equals("Name")) {
+                if (type == "Name") {
                     OutlinedTextField(value = name, onValueChange = {name = it})
                     Button(onClick = {
                         if (name != "") {
@@ -248,7 +249,7 @@ fun ShowEditPartyDialog(
                     }) {
                         Text(text = "Save")
                     }
-                } else if (type.equals("Number")) {
+                } else if (type == "Number") {
                     OutlinedTextField(value = number, onValueChange = {number = it}, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                     Button(onClick = {
                         if (number != "") {
@@ -262,7 +263,7 @@ fun ShowEditPartyDialog(
                         Text(text = "Save")
                     }
                 }
-                if ("Edit Borrower".equals(head)) {
+                if ("Edit Borrower" == head) {
                     var loanSwitch by remember {
                         mutableStateOf(
                             value = ToggleSwitch("Borrower", selectedParty.value.receivable)

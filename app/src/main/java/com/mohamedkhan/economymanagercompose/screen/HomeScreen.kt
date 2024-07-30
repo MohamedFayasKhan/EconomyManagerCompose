@@ -31,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -59,7 +60,7 @@ fun HomeScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
 //    val chartData = remember {
 //        mutableStateOf<List<Pair<String, Double>>>(emptyList())
 //    }
-    val durationChanged = remember { mutableStateOf(0) }
+    val durationChanged = remember { mutableIntStateOf(0) }
     val initialValue = stringResource(R.string.last_7_days)
     var duration by remember {
         mutableStateOf(initialValue)
@@ -136,7 +137,7 @@ fun HomeScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
                         .fillMaxWidth()
                         .height(height),
                     input = pieData.value!!,
-                    centerText = "Fayas"
+                    centerText = stringResource(id = R.string.categorize_transactions)
                 )
         }
 

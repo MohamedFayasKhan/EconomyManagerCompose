@@ -45,6 +45,7 @@ import com.mohamedkhan.economymanagercompose.R
 import com.mohamedkhan.economymanagercompose.database.Bank
 import com.mohamedkhan.economymanagercompose.signin.GoogleAuthClient
 import com.mohamedkhan.economymanagercompose.viewModel.DataViewModel
+import java.util.Locale
 
 @Composable
 fun BankScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
@@ -68,14 +69,14 @@ fun BankScreen(googleAuthClient: GoogleAuthClient, viewModel: DataViewModel) {
 @Composable
 fun BanksLazyList(filterList: MutableState<List<Bank>?>, viewModel: DataViewModel) {
     val banks = viewModel.bankLiveData
-    val list = if (filterList.value != null && filterList.value!!.size > 0) {
+    val list = if (filterList.value != null && filterList.value!!.isNotEmpty()) {
         filterList.value as List<Bank>
     } else {
         banks
     }
 
     var showDialog by remember { mutableStateOf(false) }
-    var selectedBank = remember {
+    val selectedBank = remember {
         mutableStateOf(Bank())
     }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -106,7 +107,7 @@ fun BanksLazyList(filterList: MutableState<List<Bank>?>, viewModel: DataViewMode
                             .padding(8.dp)
                     )
                     Text(
-                        text = "Rs." + String.format("%.2f", bank.balance.toDouble()),
+                        text = "Rs." + String.format(Locale.getDefault(), "%.2f", bank.balance.toDouble()),
                         fontSize = 24.sp,
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -193,10 +194,10 @@ fun ShowEditBankDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                val head = if (type.equals("Name")) "Edit Name" else "Edit Number"
+                val head = if (type == "Name") "Edit Name" else "Edit Number"
                 Text(text = head)
                 Spacer(modifier = Modifier.size(10.dp))
-                if (type.equals("Name")) {
+                if (type == "Name") {
                     OutlinedTextField(value = name, onValueChange = {name = it})
                     Button(onClick = {
                         if (name != "") {

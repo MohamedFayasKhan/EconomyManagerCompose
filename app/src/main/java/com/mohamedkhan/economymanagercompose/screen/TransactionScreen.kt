@@ -111,7 +111,7 @@ private fun TransactionDetail(
 
                             val from =
                                 viewModel.bankLiveData.filter { transaction.from == it.id }
-                            transferData = "Paid from " + from.get(0).name
+                            transferData = "Paid from " + from[0].name
                             "Paid from " + from[0].name
                         }
 
@@ -131,43 +131,43 @@ private fun TransactionDetail(
                             val to =
                                 viewModel.partiesLiveData.filter { transaction.to == it.id }
                             transferData =
-                                "Sent from " + from?.get(0)?.name + " to " + to?.get(0)?.name
-                            "Sent from " + from?.get(0)?.name + " to " + to?.get(0)?.name
+                                "Sent from " + from[0].name + " to " + to[0].name
+                            "Sent from " + from[0].name + " to " + to[0].name
                         }
 
                         Constant.PARTY_TO_BANK -> {
                             val to =
                                 viewModel.bankLiveData.filter { transaction.to == it.id }
-                            transferData = "Credited to " + to?.get(0)?.name
-                            "Credited to " + to?.get(0)?.name
+                            transferData = "Credited to " + to[0].name
+                            "Credited to " + to[0].name
                         }
 
                         Constant.ADD_BALANCE_TO_BANK -> {
                             val to =
                                 viewModel.bankLiveData.filter { transaction.to == it.id }
-                            transferData = "Credited to " + to?.get(0)?.name
-                            "Credited to " + to?.get(0)?.name
+                            transferData = "Credited to " + to[0].name
+                            "Credited to " + to[0].name
                         }
 
                         Constant.REDUCE_BALANCE_FROM_BANK -> {
                             val from =
                                 viewModel.bankLiveData.filter { transaction.from == it.id }
-                            transferData = "Debited from " + from?.get(0)?.name
-                            "Debited from " + from?.get(0)?.name
+                            transferData = "Debited from " + from[0].name
+                            "Debited from " + from[0].name
                         }
 
                         Constant.ADD_BALANCE_TO_PARTY -> {
                             val to =
                                 viewModel.partiesLiveData.filter { transaction.to == it.id }
-                            transferData = "Added to " + to?.get(0)?.name
-                            "Added to " + to?.get(0)?.name
+                            transferData = "Added to " + to[0].name
+                            "Added to " + to[0].name
                         }
 
                         Constant.REDUCE_BALANCE_FROM_PARTY -> {
                             val from =
                                 viewModel.partiesLiveData.filter { transaction.from == it.id }
-                            transferData = "Reduced to " + from?.get(0)?.name
-                            "Reduced to " + from?.get(0)?.name
+                            transferData = "Reduced to " + from[0].name
+                            "Reduced to " + from[0].name
                         }
 
                         else -> {
@@ -192,9 +192,9 @@ private fun TransactionDetail(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
-                val cat = viewModel.categoryLiveData?.filter { transaction.category == it.id }
+                val cat = viewModel.categoryLiveData.filter { transaction.category == it.id }
                 Text(
-                    text = cat?.get(0)?.name.toString()
+                    text = cat[0].name
                 )
                 Spacer(modifier = Modifier.size(30.dp))
                 Text(
@@ -212,7 +212,7 @@ private fun TransactionDetail(
                         context,
                         transaction,
                         transferData,
-                        cat?.get(0)?.name.toString()
+                        cat[0].name
                     )
                 }) {
                     Text(text = "Share")
@@ -384,10 +384,10 @@ fun ShowEditTransactionDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    var subject = remember {
+    val subject = remember {
         mutableStateOf(selectedItem.subject)
     }
-    var date = remember {
+    val date = remember {
         mutableStateOf(selectedItem.date)
     }
     Dialog(onDismissRequest = onDismiss) {
@@ -402,55 +402,59 @@ fun ShowEditTransactionDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                val head = if (type.equals("Date")) "Edit Transaction Date" else if (type.equals("delete")) "Delete Transaction" else "Edit Transaction Subject"
+                val head = if (type == "Date") "Edit Transaction Date" else if (type == "delete") "Delete Transaction" else "Edit Transaction Subject"
                 Text(text = head)
                 Spacer(modifier = Modifier.size(10.dp))
-                if (type.equals("Date")) {
-                    TextFieldDate(date = date)
-                    Button(onClick = {
-                        if (date.value != "") {
-                            selectedItem.date = date.value
-                            viewModel.upsertTransaction(selectedItem, context)
-                            onDismiss()
-                        } else {
-                            Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
-                        }
-                    }) {
-                        Text(text = "Save")
-                    }
-                } else if (type.equals("delete")) {
-                    Text(text = "Are you sure you want to delete ${selectedItem.subject} from transactions?")
-                    Row(horizontalArrangement = Arrangement.SpaceEvenly) {
+                when (type) {
+                    "Date" -> {
+                        TextFieldDate(date = date)
                         Button(onClick = {
-                            onDismiss()
-                        }) {
-                            Text(text = "Cancel")
-                        }
-                        Button(onClick = {
-                            viewModel.deleteTransaction(transaction = selectedItem) {status ->
-                                if (status) {
-                                    Toast.makeText(context, "Transaction deleted", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    Toast.makeText(context, "Transaction not deleted\nInsufficient amount", Toast.LENGTH_SHORT).show()
-                                }
+                            if (date.value != "") {
+                                selectedItem.date = date.value
+                                viewModel.upsertTransaction(selectedItem, context)
                                 onDismiss()
+                            } else {
+                                Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
                             }
                         }) {
-                            Text(text = "Delete")
+                            Text(text = "Save")
                         }
                     }
-                } else {
-                    TextFieldSubject(subject = subject)
-                    Button(onClick = {
-                        if (subject.value != "") {
-                            selectedItem.subject = subject.value
-                            viewModel.upsertTransaction(selectedItem, context)
-                            onDismiss()
-                        } else {
-                            Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                    "delete" -> {
+                        Text(text = "Are you sure you want to delete ${selectedItem.subject} from transactions?")
+                        Row(horizontalArrangement = Arrangement.SpaceEvenly) {
+                            Button(onClick = {
+                                onDismiss()
+                            }) {
+                                Text(text = "Cancel")
+                            }
+                            Button(onClick = {
+                                viewModel.deleteTransaction(transaction = selectedItem) {status ->
+                                    if (status) {
+                                        Toast.makeText(context, "Transaction deleted", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Transaction not deleted\nInsufficient amount", Toast.LENGTH_SHORT).show()
+                                    }
+                                    onDismiss()
+                                }
+                            }) {
+                                Text(text = "Delete")
+                            }
                         }
-                    }) {
-                        Text(text = "Save")
+                    }
+                    else -> {
+                        TextFieldSubject(subject = subject)
+                        Button(onClick = {
+                            if (subject.value != "") {
+                                selectedItem.subject = subject.value
+                                viewModel.upsertTransaction(selectedItem, context)
+                                onDismiss()
+                            } else {
+                                Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                            }
+                        }) {
+                            Text(text = "Save")
+                        }
                     }
                 }
             }

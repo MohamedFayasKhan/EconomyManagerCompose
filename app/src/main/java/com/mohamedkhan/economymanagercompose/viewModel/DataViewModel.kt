@@ -60,7 +60,7 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
         val database = uid?.let { Database.getDataBase().child(it).child(Constant.DATAS) }
         repository = DataRepository(database)
         _typeLiveData.addAll(
-            listOf<Type>(
+            listOf(
                 Type(Constant.SPENT, Constant.SPENT_VALUE),
                 Type(Constant.BANK_TO_BANK, Constant.BANK_TO_BANK_VALUE),
                 Type(Constant.BANK_TO_PARTY, Constant.BANK_TO_PARTY_VALUE),
@@ -223,7 +223,7 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
                             categoryTransaction,
                             "Jan 01, $currentYear",
                             today
-                        )!!
+                        )
                     }
 
                     "This Month" -> {
@@ -239,7 +239,7 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
                             categoryTransaction,
                             lastMonthStart,
                             lastMonthEnd
-                        )!!
+                        )
                     }
 
                     "Last 7 Days" -> {
@@ -251,20 +251,20 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
                                 categoryTransaction,
                                 sevenDaysAgoDate,
                                 today
-                            )!!
+                            )
                     }
 
                     "Today" -> {
                         categoryTransaction =
-                            filterTransactionsByDateRange(categoryTransaction, today, today)!!
+                            filterTransactionsByDateRange(categoryTransaction, today, today)
                     }
                 }
-                var amount: Double = 0.0
+                var amount = 0.0
                 categoryTransaction.forEach {
                     amount += it.amount.toDouble()
                 }
                 if (categoryTransaction.isNotEmpty()) {
-                    data.add(Pair<String, Double>(category.name, amount))
+                    data.add(Pair(category.name, amount))
                     val color = kotlin.random.Random.nextLong(0xFFFFFFFF)
                     dataPie.add(PieChartInput(color = Color(color), amount.toInt(), category.name))
                 }
@@ -283,8 +283,8 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
             val today = dateFormat.format(currentDate)
             var incomeData =
                 _transactionLiveData.filter { it.income && it.type != Constant.BANK_TO_BANK }
-            incomeData = filterTransactionsByDateRange(incomeData, "Jan 01, $currentYear", today)!!
-            var value: Double = 0.0
+            incomeData = filterTransactionsByDateRange(incomeData, "Jan 01, $currentYear", today)
+            var value = 0.0
             if (incomeData.isNotEmpty()) {
                 for (data in incomeData.distinct()) {
                     value += data.amount.toDouble()
@@ -303,9 +303,9 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
             val today = dateFormat.format(currentDate)
             var expenseData = _transactionLiveData.filter { !it.income }
             expenseData =
-                filterTransactionsByDateRange(expenseData, "Jan 01, $currentYear", today)!!
-            var value: Double = 0.0
-            if (!expenseData.isNullOrEmpty()) {
+                filterTransactionsByDateRange(expenseData, "Jan 01, $currentYear", today)
+            var value = 0.0
+            if (expenseData.isNotEmpty()) {
                 for (data in expenseData.distinct()) {
                     value += data.amount.toDouble()
                 }
@@ -316,7 +316,7 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
 
     fun calculateTotalAmount() {
         viewModelScope.launch {
-            var value: Double = 0.0
+            var value = 0.0
             _banksLiveData.distinct().forEach {
                 value += it.balance.toDouble()
             }
@@ -328,12 +328,11 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
         transactions: List<Transaction>,
         startDate: String,
         endDate: String
-    ): List<Transaction>? {
+    ): List<Transaction> {
         val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.ENGLISH)
         val start: Date = dateFormat.parse(startDate) ?: return emptyList()
         val end: Date = dateFormat.parse(endDate) ?: return emptyList()
         return transactions.filter {
-            val s = it.date
             val transactionDate: Date = dateFormat.parse(it.date) ?: return@filter false
             transactionDate in start..end
         }

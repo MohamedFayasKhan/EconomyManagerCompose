@@ -256,6 +256,7 @@ fun PieChart(
                 .width(Dp(innerRadius/1.5f))
                 .padding(25.dp),
             fontWeight = FontWeight.SemiBold,
+            color = Color.Black,
             fontSize = 17.sp,
             textAlign = TextAlign.Center
         )

@@ -69,13 +69,13 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
     val to = remember { mutableStateOf(value = "") }
     val toValue = remember { mutableStateOf(value = "") }
     var expandedTo by remember { mutableStateOf(false) }
-    var isTypeUpdated = remember { mutableStateOf(false) }
+    val isTypeUpdated = remember { mutableStateOf(false) }
     var loanSwitch by remember {
         mutableStateOf(
             value = ToggleSwitch("Give Loan", false)
         )
     }
-    var isAddCategory = remember { mutableStateOf(false) }
+    val isAddCategory = remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -556,65 +556,70 @@ private fun <T> DropDownCategory(
             modifier = Modifier.fillMaxWidth(),
 
             ) {
-            if (type == "Category") {
-                mergeAddCategory((liveData as SnapshotStateList<Category>))?.forEach {
-                    DropdownMenuItem(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = { Text(text = it.name) },
-                        onClick = {
-                            onExpandedChange(false)
-                            value.value = it.name
-                            id.value = it.id
-                            if (it.id == Constant.ADD_CATEGORY) {
-                                onOptionChange(null, id.value)
-                            } else {
-                                onOptionChange(null, null)
-                            }
-                        },
-                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
+            when (type) {
+                "Category" -> {
+                    mergeAddCategory((liveData as SnapshotStateList<Category>)).forEach {
+                        DropdownMenuItem(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = { Text(text = it.name) },
+                            onClick = {
+                                onExpandedChange(false)
+                                value.value = it.name
+                                id.value = it.id
+                                if (it.id == Constant.ADD_CATEGORY) {
+                                    onOptionChange(null, id.value)
+                                } else {
+                                    onOptionChange(null, null)
+                                }
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
                 }
-            } else if (type == "Bank") {
-                (liveData as SnapshotStateList<Bank>)?.forEach {
-                    DropdownMenuItem(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = { Text(text = it.name) },
-                        onClick = {
-                            onExpandedChange(false)
-                            value.value = it.name + " - " + it.balance
-                            id.value = it.id
+                "Bank" -> {
+                    (liveData as SnapshotStateList<Bank>).forEach {
+                        DropdownMenuItem(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = { Text(text = it.name) },
+                            onClick = {
+                                onExpandedChange(false)
+                                value.value = it.name + " - " + it.balance
+                                id.value = it.id
 
-                        },
-                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
                 }
-            } else if (type == "Party") {
-                (liveData as SnapshotStateList<Party>)?.forEach {
-                    DropdownMenuItem(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = { Text(text = it.name) },
-                        onClick = {
-                            onExpandedChange(false)
-                            value.value = it.name + " - " + it.balance
-                            id.value = it.id
+                "Party" -> {
+                    (liveData as SnapshotStateList<Party>).forEach {
+                        DropdownMenuItem(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = { Text(text = it.name) },
+                            onClick = {
+                                onExpandedChange(false)
+                                value.value = it.name + " - " + it.balance
+                                id.value = it.id
 
-                        },
-                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
                 }
-            } else if (type == "Type") {
-                (liveData as SnapshotStateList<Type>)?.forEach {
-                    DropdownMenuItem(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = { Text(text = it.name) },
-                        onClick = {
-                            onExpandedChange(false)
-                            value.value = it.name
-                            id.value = it.id
-                            onOptionChange(it.id, null)
-                        },
-                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
+                "Type" -> {
+                    (liveData as SnapshotStateList<Type>).forEach {
+                        DropdownMenuItem(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = { Text(text = it.name) },
+                            onClick = {
+                                onExpandedChange(false)
+                                value.value = it.name
+                                id.value = it.id
+                                onOptionChange(it.id, null)
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
                 }
             }
         }
