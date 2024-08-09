@@ -1,14 +1,11 @@
 package com.mohamedkhan.economymanagercompose.database
 
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-
 data class Bank(
     val id: String,
     var name: String,
     var number: String,
     var balance: String,
-    val isActive: Boolean
+    val active: Boolean
 ) {
     constructor() : this(null.toString(), null.toString(), null.toString(), null.toString(), false)
 }
@@ -16,9 +13,9 @@ data class Bank(
 data class Party(
     val id: String,
     var name: String,
-    val number: String,
+    var number: String,
     var balance: String,
-    val isActive: Boolean,
+    val active: Boolean,
     var receivable: Boolean
 ) {
     constructor(): this(null.toString(), null.toString(), null.toString(), null.toString(), false, false)
@@ -40,10 +37,10 @@ data class Type(
 
 data class Transaction(
     val id: String,
-    val subject: String,
+    var subject: String,
     val amount: String,
     val category: String,
-    val date: String,
+    var date: String,
     val timeStamp: String,
     val type: String,
     val from: String,
@@ -57,11 +54,3 @@ data class ToggleSwitch(
     val text: String,
     var isChecked: Boolean
 )
-
-data class CategoryData(
-    val name: String,
-    val amount: Double,
-    val length: Dp
-) {
-    constructor(): this(null.toString(), 0.0, 0.dp)
-}

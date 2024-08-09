@@ -2,9 +2,12 @@ package com.mohamedkhan.economymanagercompose.screen
 
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,7 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -108,64 +110,64 @@ private fun TransactionDetail(
                         Constant.SPENT -> {
 
                             val from =
-                                viewModel.bankLiveData.value?.filter { transaction.from == it.id }
-                            transferData = "Paid from " + from?.get(0)?.name
-                            "Paid from " + from?.get(0)?.name
+                                viewModel.bankLiveData.filter { transaction.from == it.id }
+                            transferData = "Paid from " + from[0].name
+                            "Paid from " + from[0].name
                         }
 
                         Constant.BANK_TO_BANK -> {
                             val from =
-                                viewModel.bankLiveData.value?.filter { transaction.from == it.id }
+                                viewModel.bankLiveData.filter { transaction.from == it.id }
                             val to =
-                                viewModel.bankLiveData.value?.filter { transaction.to == it.id }
+                                viewModel.bankLiveData.filter { transaction.to == it.id }
                             transferData =
-                                "Transfer from " + from?.get(0)?.name + " to " + to?.get(0)?.name
-                            "Transfer from " + from?.get(0)?.name + " to " + to?.get(0)?.name
+                                "Transfer from " + from[0].name + " to " + to[0].name
+                            "Transfer from " + from[0].name + " to " + to[0].name
                         }
 
                         Constant.BANK_TO_PARTY -> {
                             val from =
-                                viewModel.bankLiveData.value?.filter { transaction.from == it.id }
+                                viewModel.bankLiveData.filter { transaction.from == it.id }
                             val to =
-                                viewModel.partiesLiveData.value?.filter { transaction.to == it.id }
+                                viewModel.partiesLiveData.filter { transaction.to == it.id }
                             transferData =
-                                "Sent from " + from?.get(0)?.name + " to " + to?.get(0)?.name
-                            "Sent from " + from?.get(0)?.name + " to " + to?.get(0)?.name
+                                "Sent from " + from[0].name + " to " + to[0].name
+                            "Sent from " + from[0].name + " to " + to[0].name
                         }
 
                         Constant.PARTY_TO_BANK -> {
                             val to =
-                                viewModel.bankLiveData.value?.filter { transaction.to == it.id }
-                            transferData = "Credited to " + to?.get(0)?.name
-                            "Credited to " + to?.get(0)?.name
+                                viewModel.bankLiveData.filter { transaction.to == it.id }
+                            transferData = "Credited to " + to[0].name
+                            "Credited to " + to[0].name
                         }
 
                         Constant.ADD_BALANCE_TO_BANK -> {
                             val to =
-                                viewModel.bankLiveData.value?.filter { transaction.to == it.id }
-                            transferData = "Credited to " + to?.get(0)?.name
-                            "Credited to " + to?.get(0)?.name
+                                viewModel.bankLiveData.filter { transaction.to == it.id }
+                            transferData = "Credited to " + to[0].name
+                            "Credited to " + to[0].name
                         }
 
                         Constant.REDUCE_BALANCE_FROM_BANK -> {
                             val from =
-                                viewModel.bankLiveData.value?.filter { transaction.from == it.id }
-                            transferData = "Debited from " + from?.get(0)?.name
-                            "Debited from " + from?.get(0)?.name
+                                viewModel.bankLiveData.filter { transaction.from == it.id }
+                            transferData = "Debited from " + from[0].name
+                            "Debited from " + from[0].name
                         }
 
                         Constant.ADD_BALANCE_TO_PARTY -> {
                             val to =
-                                viewModel.partiesLiveData.value?.filter { transaction.to == it.id }
-                            transferData = "Added to " + to?.get(0)?.name
-                            "Added to " + to?.get(0)?.name
+                                viewModel.partiesLiveData.filter { transaction.to == it.id }
+                            transferData = "Added to " + to[0].name
+                            "Added to " + to[0].name
                         }
 
                         Constant.REDUCE_BALANCE_FROM_PARTY -> {
                             val from =
-                                viewModel.partiesLiveData.value?.filter { transaction.from == it.id }
-                            transferData = "Reduced to " + from?.get(0)?.name
-                            "Reduced to " + from?.get(0)?.name
+                                viewModel.partiesLiveData.filter { transaction.from == it.id }
+                            transferData = "Reduced to " + from[0].name
+                            "Reduced to " + from[0].name
                         }
 
                         else -> {
@@ -190,9 +192,9 @@ private fun TransactionDetail(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
-                val cat = viewModel.categoryLiveData.value?.filter { transaction.category == it.id }
+                val cat = viewModel.categoryLiveData.filter { transaction.category == it.id }
                 Text(
-                    text = cat?.get(0)?.name.toString()
+                    text = cat[0].name
                 )
                 Spacer(modifier = Modifier.size(30.dp))
                 Text(
@@ -210,7 +212,7 @@ private fun TransactionDetail(
                         context,
                         transaction,
                         transferData,
-                        cat?.get(0)?.name.toString()
+                        cat[0].name
                     )
                 }) {
                     Text(text = "Share")
@@ -238,10 +240,12 @@ private fun shareTransaction(
     context.startActivity(shareIntent)
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TransactionsLazyList(filterList: MutableState<List<Transaction>?>, viewModel: DataViewModel) {
     var showDialog by remember { mutableStateOf(false) }
-    val transactions by viewModel.transactionLiveData.observeAsState(emptyList())
+    var showOptions by remember { mutableStateOf(false) }
+    val transactions = viewModel.transactionLiveData
     var selectedItem by remember { mutableStateOf(Transaction()) }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         val list = if (filterList.value != null && filterList.value!!.isNotEmpty()) {
@@ -250,12 +254,18 @@ fun TransactionsLazyList(filterList: MutableState<List<Transaction>?>, viewModel
             transactions
         }
 
-        items(list) { transaction ->
+        items(list.distinct()) { transaction ->
             Box(
-                modifier = Modifier.clickable {
-                    showDialog = true
-                    selectedItem = transaction
-                }
+                modifier = Modifier.combinedClickable(
+                    onClick = {
+                        showDialog = true
+                        selectedItem = transaction
+                    },
+                    onLongClick = {
+                        showOptions = true
+                        selectedItem = transaction
+                    }
+                )
             ) {
                 Row(
                     modifier = Modifier
@@ -310,6 +320,146 @@ fun TransactionsLazyList(filterList: MutableState<List<Transaction>?>, viewModel
             transaction = selectedItem,
             onDismiss = { showDialog = false })
     }
+    if (showOptions) {
+        TransactionOptionDialog(viewModel, selectedItem) {
+            showOptions = false
+        }
+    }
+}
+
+@Composable
+private fun TransactionOptionDialog(
+    viewModel: DataViewModel,
+    selectedItem: Transaction,
+    onDismiss: () -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    var type by remember { mutableStateOf("")}
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(30.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(text = "Edit Date", modifier = Modifier
+                    .padding(10.dp)
+                    .clickable {
+                        showDialog = true
+                        type = "Date"
+                    })
+                Text(text = "Edit Subject", modifier = Modifier
+                    .padding(10.dp)
+                    .clickable {
+                        showDialog = true
+                        type = "Subject"
+                    })
+                Text(text = "Delete Transaction", modifier = Modifier
+                    .padding(10.dp)
+                    .clickable {
+                        showDialog = true
+                        type = "delete"
+                    })
+            }
+        }
+    }
+    if (showDialog) {
+        ShowEditTransactionDialog(viewModel, type, selectedItem) {
+            showDialog = false
+            onDismiss()
+        }
+    }
+}
+
+@Composable
+fun ShowEditTransactionDialog(
+    viewModel: DataViewModel,
+    type: String,
+    selectedItem: Transaction,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val subject = remember {
+        mutableStateOf(selectedItem.subject)
+    }
+    val date = remember {
+        mutableStateOf(selectedItem.date)
+    }
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(30.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                val head = if (type == "Date") "Edit Transaction Date" else if (type == "delete") "Delete Transaction" else "Edit Transaction Subject"
+                Text(text = head)
+                Spacer(modifier = Modifier.size(10.dp))
+                when (type) {
+                    "Date" -> {
+                        TextFieldDate(date = date)
+                        Button(onClick = {
+                            if (date.value != "") {
+                                selectedItem.date = date.value
+                                viewModel.upsertTransaction(selectedItem, context)
+                                onDismiss()
+                            } else {
+                                Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                            }
+                        }) {
+                            Text(text = "Save")
+                        }
+                    }
+                    "delete" -> {
+                        Text(text = "Are you sure you want to delete ${selectedItem.subject} from transactions?")
+                        Row(horizontalArrangement = Arrangement.SpaceEvenly) {
+                            Button(onClick = {
+                                onDismiss()
+                            }) {
+                                Text(text = "Cancel")
+                            }
+                            Button(onClick = {
+                                viewModel.deleteTransaction(transaction = selectedItem) {status ->
+                                    if (status) {
+                                        Toast.makeText(context, "Transaction deleted", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Transaction not deleted\nInsufficient amount", Toast.LENGTH_SHORT).show()
+                                    }
+                                    onDismiss()
+                                }
+                            }) {
+                                Text(text = "Delete")
+                            }
+                        }
+                    }
+                    else -> {
+                        TextFieldSubject(subject = subject)
+                        Button(onClick = {
+                            if (subject.value != "") {
+                                selectedItem.subject = subject.value
+                                viewModel.upsertTransaction(selectedItem, context)
+                                onDismiss()
+                            } else {
+                                Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                            }
+                        }) {
+                            Text(text = "Save")
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -321,7 +471,7 @@ fun SearchBoxTransaction(filterList: MutableState<List<Transaction>?>, viewModel
         value = searchText,
         onValueChange = { text ->
             searchText = text
-            filterList.value = viewModel.transactionLiveData.value?.filter {transaction ->
+            filterList.value = viewModel.transactionLiveData.filter {transaction ->
                 transaction.subject.lowercase().contains(searchText.lowercase()) ||
                         transaction.amount.lowercase().contains(searchText.lowercase()) ||
                         transaction.category.lowercase().contains(searchText.lowercase())

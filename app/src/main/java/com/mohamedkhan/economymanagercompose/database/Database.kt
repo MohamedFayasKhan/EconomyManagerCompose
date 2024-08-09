@@ -11,7 +11,7 @@ class Database {
         private var INSTANCE: DatabaseReference? = null
 
         fun getDataBase(): DatabaseReference {
-            var tempInstance = INSTANCE
+            val tempInstance = INSTANCE
             if (tempInstance != null) {
                 return tempInstance
             }
