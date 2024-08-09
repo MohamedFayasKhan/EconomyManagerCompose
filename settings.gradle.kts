@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Economy Manager Compose"
 include(":app")
+include(":economywear")
