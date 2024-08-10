@@ -7,7 +7,6 @@
     <string name="hello_world">From the Square world,\nHello, %1$s!</string>
     <string name="tile_label">Example tile</string>
     <string name="complication_label">Example complication</string>\
-    <string name="web_client_id">557236046437-8h0gasuapgsgv7bqsn0gutteufhddl3s.apps.googleusercontent.com</string>
     <string name="dd_mmm_yyyy">dd-MMM-yyyy</string>
     <string name="search">search</string>
     <string name="welcome">Welcome</string>

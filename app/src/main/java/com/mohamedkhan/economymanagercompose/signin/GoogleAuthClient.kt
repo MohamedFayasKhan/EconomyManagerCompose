@@ -12,7 +12,7 @@ import com.google.firebase.auth.auth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.mohamedkhan.economymanagercompose.R
+import com.mohamedkhan.economymanagercompose.BuildConfig
 import com.mohamedkhan.economymanagercompose.constant.Constant
 import com.mohamedkhan.economymanagercompose.database.Database
 import kotlinx.coroutines.tasks.await
@@ -118,7 +118,7 @@ class GoogleAuthClient(
                 BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
                     .setSupported(true)
                     // Your server's client ID, not your Android client ID.
-                    .setServerClientId(context.getString(R.string.web_client_id))
+                    .setServerClientId(BuildConfig.API_KEY)
                     // Only show accounts previously used to sign in.
                     .setFilterByAuthorizedAccounts(false)
                     .build()).setAutoSelectEnabled(true)
