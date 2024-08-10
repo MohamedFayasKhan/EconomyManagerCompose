@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Compose Economy Manager</string>
-    <string name="web_client_id">557236046437-8h0gasuapgsgv7bqsn0gutteufhddl3s.apps.googleusercontent.com</string>
     <string name="dd_mmm_yyyy">dd-MMM-yyyy</string>
     <string name="search">search</string>
     <string name="welcome">Welcome</string>

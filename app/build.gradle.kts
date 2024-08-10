@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -5,6 +7,9 @@ plugins {
     kotlin("kapt")
 }
 
+val localProperties = Properties().apply {
+    load(rootProject.file("local.properties").inputStream())
+}
 android {
     namespace = "com.mohamedkhan.economymanagercompose"
     compileSdk = 34
@@ -20,11 +25,12 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        buildConfigField("String", "API_KEY", "\"${localProperties.getProperty("API_KEY")}\"")
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -40,6 +46,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
         viewBinding = true
     }
     composeOptions {

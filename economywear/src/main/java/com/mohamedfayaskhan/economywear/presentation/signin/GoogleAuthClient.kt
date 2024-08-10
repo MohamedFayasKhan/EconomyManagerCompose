@@ -14,7 +14,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import com.mohamedfayaskhan.economywear.R
+import com.mohamedfayaskhan.economywear.BuildConfig
 import com.mohamedfayaskhan.economywear.presentation.MainActivity
 
 class GoogleAuthClient(
@@ -38,7 +38,7 @@ class GoogleAuthClient(
     suspend fun getSignInIntent(): GoogleSignInClient {
         //         Setup Google Sign-In options and client
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(context.getString(R.string.web_client_id))
+            .requestIdToken(BuildConfig.API_KEY)
             .requestEmail()
             .build()
         return GoogleSignIn.getClient(context, gso)
