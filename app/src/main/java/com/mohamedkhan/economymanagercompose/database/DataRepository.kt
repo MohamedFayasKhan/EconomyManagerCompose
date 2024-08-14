@@ -162,7 +162,7 @@ class DataRepository(private val database: DatabaseReference?) {
                     transaction.to == it.id
                 }
                 val fromBank = bank[0]
-                val toParty = party[1]
+                val toParty = party[0]
                 val fromOldBalance = fromBank.balance.toDouble()
                 val toOldBalance = toParty.balance.toDouble()
                 val amountDouble = transaction.amount.toDouble()
