@@ -1,12 +1,9 @@
 package com.mohamedkhan.economymanagercompose.database
 
 import android.content.Context
-import android.graphics.Paint
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -162,7 +159,7 @@ class DataRepository(private val database: DatabaseReference?) {
                     transaction.to == it.id
                 }
                 val fromBank = bank[0]
-                val toParty = party[1]
+                val toParty = party[0]
                 val fromOldBalance = fromBank.balance.toDouble()
                 val toOldBalance = toParty.balance.toDouble()
                 val amountDouble = transaction.amount.toDouble()
@@ -231,9 +228,9 @@ class DataRepository(private val database: DatabaseReference?) {
                         upsertTransaction(transaction, context)
                         isTransactionCompleted(true)
                     } else {
-                        val fromNewBalance1 = fromOldBalance.plus(amountDouble)
+//                        val fromNewBalance1 = fromOldBalance.minus(amountDouble)
                         val toNewBalance = toOldBalance.plus(amountDouble)
-                        fromParty.balance = fromNewBalance1.toString()
+                        fromParty.balance = fromNewBalance.toString()
                         toBank.balance = toNewBalance.toString()
                         upsertParty(fromParty)
                         upsertAccount(toBank)
@@ -320,25 +317,25 @@ class DataRepository(private val database: DatabaseReference?) {
         return key.toString()
     }
 
-    fun getCategoryLength(text: String): Dp {
-        val paint = Paint()
-        val textSizeInSp = 16f
-        val density = 160 // Assuming mdpi (160dpi) as the baseline density
+//    fun getCategoryLength(text: String): Dp {
+//        val paint = Paint()
+//        val textSizeInSp = 16f
+//        val density = 160 // Assuming mdpi (160dpi) as the baseline density
+//
+//        // Convert sp to pixels
+//        val textSizeInPx = textSizeInSp * density / 160
+//        paint.textSize = textSizeInPx
+//        // Measure the text width in pixels
+//        val textWidthInPixels = paint.measureText(text)
+//        // Convert pixels to dp
+//        val textWidthInDp = textWidthInPixels / (density.toFloat() / 160)
+//
+//        return textWidthInDp.dp
+//    }
 
-        // Convert sp to pixels
-        val textSizeInPx = textSizeInSp * density / 160
-        paint.textSize = textSizeInPx
-        // Measure the text width in pixels
-        val textWidthInPixels = paint.measureText(text)
-        // Convert pixels to dp
-        val textWidthInDp = textWidthInPixels / (density.toFloat() / 160)
-
-        return textWidthInDp.dp
-    }
-
-    fun updateTransactionDate(id: String, date: String) {
-        database?.child(Constant.TRANSACTION_PATH)?.child(id)?.child("date")?.setValue(date)
-    }
+//    fun updateTransactionDate(id: String, date: String) {
+//        database?.child(Constant.TRANSACTION_PATH)?.child(id)?.child("date")?.setValue(date)
+//    }
 
     fun deleteTransaction(transaction: Transaction) {
         database?.child(Constant.TRANSACTION_PATH)?.child(transaction.id)?.removeValue()
