@@ -110,15 +110,15 @@ class PartyViewModel : ViewModel() {
             is Event.OnSaveEditParty -> {
                 if (nameEditParty != "" || numberEditParty != "") {
                     when (event.type) {
-                        typeEditParty -> {
+                        "Name" -> {
                             selectedParty.name = nameEditParty
                             nameEditParty = ""
                         }
-                        typeEditParty -> {
+                        "Number" -> {
                             selectedParty.number = numberEditParty
                             numberEditParty = ""
                         }
-                        typeEditParty -> {
+                        "Borrower" -> {
                             selectedParty.receivable = loanSwitchEditParty.isChecked
                         }
                     }

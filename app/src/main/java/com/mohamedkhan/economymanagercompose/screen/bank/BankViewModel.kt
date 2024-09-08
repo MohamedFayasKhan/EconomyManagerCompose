@@ -94,7 +94,7 @@ class BankViewModel: ViewModel() {
 
             is Event.OnSaveEditBank -> {
                 if (nameEditBankDialog != "" || numberEditBankDialog != "") {
-                    if (event.type == typeEditBankDialog) {
+                    if (event.type == "Name") {
                         selectedBankOptionDialog.name = nameEditBankDialog
                         nameEditBankDialog = ""
                     } else {
