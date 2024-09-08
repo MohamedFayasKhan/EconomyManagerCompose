@@ -1,16 +1,16 @@
 package com.mohamedkhan.economymanagercompose.viewModel
 
-import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
+import android.os.Build
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.mohamedkhan.economymanagercompose.chart.PieChartInput
 import com.mohamedkhan.economymanagercompose.constant.Constant
 import com.mohamedkhan.economymanagercompose.database.Bank
 import com.mohamedkhan.economymanagercompose.database.Category
@@ -23,43 +23,48 @@ import com.mohamedkhan.economymanagercompose.database.Type
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
 class DataViewModel(application: Application) : AndroidViewModel(application) {
 
     private lateinit var repository: DataRepository
-    private val _transactionLiveData = mutableStateListOf<Transaction>()
-    val transactionLiveData: SnapshotStateList<Transaction> = _transactionLiveData
+    private val _transactions = mutableStateListOf<Transaction>()
+    val transactions: SnapshotStateList<Transaction> = _transactions
 
-    private val _partiesLiveData = mutableStateListOf<Party>()
-    val partiesLiveData: SnapshotStateList<Party> = _partiesLiveData
+    private val _parties = mutableStateListOf<Party>()
+    val parties: SnapshotStateList<Party> = _parties
 
-    private val _banksLiveData = mutableStateListOf<Bank>()
-    val bankLiveData: SnapshotStateList<Bank> = _banksLiveData
+    private val _banks = mutableStateListOf<Bank>()
+    val banks: SnapshotStateList<Bank> = _banks
 
-    private val _categoryLiveData = mutableStateListOf<Category>()
-    val categoryLiveData: SnapshotStateList<Category> = _categoryLiveData
+    private val _categories = mutableStateListOf<Category>()
+    val categories: SnapshotStateList<Category> = _categories
 
-    private var _typeLiveData = mutableStateListOf<Type>()
-    val typeLiveData: SnapshotStateList<Type> = _typeLiveData
+    private var _types = mutableStateListOf<Type>()
+    val types: SnapshotStateList<Type> = _types
 
-    private val _incomeLiveData = MutableLiveData<String>()
-    val incomeLiveData: LiveData<String> get() = _incomeLiveData
-    private val _expenseLiveData = MutableLiveData<String>()
-    val expenseLiveData: LiveData<String> get() = _expenseLiveData
-    private val _totalLiveData = MutableLiveData<String>()
-    val totalLiveData: LiveData<String> get() = _totalLiveData
-    private val _durationCategoryLiveData = MutableLiveData<List<Pair<String, Double>>>()
-    val durationCategoryLiveData: LiveData<List<Pair<String, Double>>> get() = _durationCategoryLiveData
-    private val _categoryPieData = MutableLiveData<List<PieChartInput>>()
-    val categoryPieData: LiveData<List<PieChartInput>> get() = _categoryPieData
+    var totalIncome by mutableStateOf("")
+        private set
+    var totalExpense by mutableStateOf("")
+        private set
+    private val _totalBankBalance = mutableStateOf("")
+    val totalBankBalance: State<String> get() = _totalBankBalance
+//    private val _durationCategories = MutableLiveData<List<Pair<String, Double>>>()
+//    val durationCategories: LiveData<List<Pair<String, Double>>> get() = _durationCategories
+//    private val _categoryPieData = MutableLiveData<List<PieChartInput>>()
+//    val categoryPieData: LiveData<List<PieChartInput>> get() = _categoryPieData
 
     fun initDatabase(uid: String?) {
         val database = uid?.let { Database.getDataBase().child(it).child(Constant.DATAS) }
         repository = DataRepository(database)
-        _typeLiveData.addAll(
+        _types.addAll(
             listOf(
                 Type(Constant.SPENT, Constant.SPENT_VALUE),
                 Type(Constant.BANK_TO_BANK, Constant.BANK_TO_BANK_VALUE),
@@ -88,12 +93,11 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val fetcher = object : DataFetcher<Transaction> {
                 override fun getDataFromFireBase(list: List<Transaction>) {
-                    _transactionLiveData.clear()
-                    _transactionLiveData.addAll(list.distinct().reversed())
+                    _transactions.clear()
+                    _transactions.addAll(list.distinct().reversed())
                     viewModelScope.launch {
                         calculateIncome()
                         calculateExpense()
-                        getChartData("Last 7 Days")
                     }
                 }
 
@@ -104,12 +108,60 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun dateToEpoch(date: String): Long {
+        var dateMillis: Long
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                val formatter = DateTimeFormatter.ofPattern(Constant.DATE_FORMAT)
+                val localDate = LocalDate.parse(date, formatter)
+                val instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant()
+                dateMillis = instant.toEpochMilli()
+            } catch (e: DateTimeParseException) {
+                val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)
+                val localDate = LocalDate.parse(date, formatter)
+                val instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant()
+                dateMillis = instant.toEpochMilli()
+            }
+            return dateMillis
+        }
+        return System.currentTimeMillis()
+    }
+
+    fun epochToDate(date: Long): String {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val instant = Instant.ofEpochMilli(date)
+            val localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
+            val formatter = DateTimeFormatter.ofPattern(Constant.DATE_FORMAT)
+            return localDateTime.format(formatter)
+        }
+        return System.currentTimeMillis().toString()
+    }
+
+    fun epochToTimeStamp(timeStamp: Long): String {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val instant = Instant.ofEpochMilli(timeStamp)
+            val localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
+            val formatter = DateTimeFormatter.ofPattern(Constant.TIMESTAMP_FORMAT)
+            return localDateTime.format(formatter)
+        }
+        return System.currentTimeMillis().toString()
+    }
+
+    fun timeStampToEpoch(): Long {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val now: Instant = Instant.now()
+            val timeStampMillis: Long = now.toEpochMilli()
+            return timeStampMillis
+        }
+        return System.currentTimeMillis()
+    }
+
     private fun readParties() {
         viewModelScope.launch(Dispatchers.IO) {
             val fetcher = object : DataFetcher<Party> {
                 override fun getDataFromFireBase(list: List<Party>) {
-                    _partiesLiveData.clear()
-                    partiesLiveData.addAll(list.distinct())
+                    _parties.clear()
+                    parties.addAll(list.distinct())
                 }
 
                 override fun getSingleData(data: Party) {
@@ -124,8 +176,8 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val fetcher = object : DataFetcher<Bank> {
                 override fun getDataFromFireBase(list: List<Bank>) {
-                    _banksLiveData.clear()
-                    _banksLiveData.addAll(list.distinct())
+                    _banks.clear()
+                    _banks.addAll(list.distinct())
                     viewModelScope.launch {
                         calculateTotalAmount()
                     }
@@ -143,8 +195,8 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val fetcher = object : DataFetcher<Category> {
                 override fun getDataFromFireBase(list: List<Category>) {
-                    _categoryLiveData.clear()
-                    _categoryLiveData.addAll(list.distinct())
+                    _categories.clear()
+                    _categories.addAll(list.distinct())
                 }
 
                 override fun getSingleData(data: Category) {
@@ -160,10 +212,6 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
         return repository.getUniqueDatabaseId()
     }
 
-    fun getTimestamp(): String {
-        return repository.getTimestamp()
-    }
-
     fun addTransaction(
         transaction: Transaction,
         context: Context,
@@ -174,8 +222,8 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
             repository.addTransaction(
                 context,
                 transaction,
-                partiesLiveData,
-                bankLiveData,
+                parties,
+                banks,
                 checked
             ) {
                 isTransactionCompleted(it)
@@ -205,76 +253,6 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun getChartData(duration: String) {
-        viewModelScope.launch {
-            val data = mutableListOf<Pair<String, Double>>()
-            val dataPie = mutableListOf<PieChartInput>()
-            _categoryLiveData.forEach { category ->
-                var categoryTransaction = _transactionLiveData.filter { transaction ->
-                    category.id == transaction.category
-                }
-                val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-                val currentDate = Calendar.getInstance().time
-                val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.getDefault())
-                val today = dateFormat.format(currentDate)
-                when (duration) {
-                    "This Year" -> {
-                        categoryTransaction = filterTransactionsByDateRange(
-                            categoryTransaction,
-                            "Jan 01, $currentYear",
-                            today
-                        )
-                    }
-
-                    "This Month" -> {
-                        val lastMonth = Calendar.getInstance()
-                        lastMonth.add(Calendar.MONTH, -1)
-                        lastMonth.set(Calendar.DAY_OF_MONTH, 1)
-                        val lastDayOfLastMonth = Calendar.getInstance()
-                        lastDayOfLastMonth.set(Calendar.DAY_OF_MONTH, 1)
-                        lastDayOfLastMonth.add(Calendar.DAY_OF_MONTH, -1)
-                        val lastMonthStart = dateFormat.format(lastMonth.time)
-                        val lastMonthEnd = dateFormat.format(lastDayOfLastMonth.time)
-                        categoryTransaction = filterTransactionsByDateRange(
-                            categoryTransaction,
-                            lastMonthStart,
-                            lastMonthEnd
-                        )
-                    }
-
-                    "Last 7 Days" -> {
-                        val sevenDaysAgo = Calendar.getInstance()
-                        sevenDaysAgo.add(Calendar.DAY_OF_MONTH, -7)
-                        val sevenDaysAgoDate = dateFormat.format(sevenDaysAgo.time)
-                        categoryTransaction =
-                            filterTransactionsByDateRange(
-                                categoryTransaction,
-                                sevenDaysAgoDate,
-                                today
-                            )
-                    }
-
-                    "Today" -> {
-                        categoryTransaction =
-                            filterTransactionsByDateRange(categoryTransaction, today, today)
-                    }
-                }
-                var amount = 0.0
-                categoryTransaction.forEach {
-                    amount += it.amount.toDouble()
-                }
-                if (categoryTransaction.isNotEmpty()) {
-                    data.add(Pair(category.name, amount))
-                    val color = kotlin.random.Random.nextLong(0xFFFFFFFF)
-                    dataPie.add(PieChartInput(color = Color(color), amount.toInt(), category.name))
-                }
-            }
-            _durationCategoryLiveData.value = data
-            _categoryPieData.value = dataPie
-        }
-    }
-
-    @SuppressLint("DefaultLocale")
     fun calculateIncome() {
         viewModelScope.launch {
             val currentYear = Calendar.getInstance().get(Calendar.YEAR)
@@ -282,45 +260,44 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
             val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.getDefault())
             val today = dateFormat.format(currentDate)
             var incomeData =
-                _transactionLiveData.filter { it.income && it.type != Constant.BANK_TO_BANK }
+                _transactions.filter { it.income && it.type != Constant.BANK_TO_BANK }
             incomeData = filterTransactionsByDateRange(incomeData, "Jan 01, $currentYear", today)
             var value = 0.0
             if (incomeData.isNotEmpty()) {
                 for (data in incomeData.distinct()) {
-                    value += data.amount.toDouble()
+                    value += data.amount
                 }
             }
-            _incomeLiveData.value = String.format("%.2f", value)
+            totalIncome = String.format(Locale.getDefault(),"%.2f", value)
         }
     }
 
-    @SuppressLint("DefaultLocale")
     fun calculateExpense() {
         viewModelScope.launch {
             val currentYear = Calendar.getInstance().get(Calendar.YEAR)
             val currentDate = Calendar.getInstance().time
             val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.getDefault())
             val today = dateFormat.format(currentDate)
-            var expenseData = _transactionLiveData.filter { !it.income }
+            var expenseData = _transactions.filter { !it.income }
             expenseData =
                 filterTransactionsByDateRange(expenseData, "Jan 01, $currentYear", today)
             var value = 0.0
             if (expenseData.isNotEmpty()) {
                 for (data in expenseData.distinct()) {
-                    value += data.amount.toDouble()
+                    value += data.amount
                 }
             }
-            _expenseLiveData.value = String.format("%.2f", value)
+            totalExpense = String.format(Locale.getDefault(), "%.2f", value)
         }
     }
 
     fun calculateTotalAmount() {
         viewModelScope.launch {
             var value = 0.0
-            _banksLiveData.distinct().forEach {
+            _banks.distinct().forEach {
                 value += it.balance.toDouble()
             }
-            _totalLiveData.value = String.format(Locale.getDefault(), "%.2f", value)
+            _totalBankBalance.value = String.format(Locale.getDefault(), "%.2f", value)
         }
     }
 
@@ -329,12 +306,10 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
         startDate: String,
         endDate: String
     ): List<Transaction> {
-        val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.ENGLISH)
-        val start: Date = dateFormat.parse(startDate) ?: return emptyList()
-        val end: Date = dateFormat.parse(endDate) ?: return emptyList()
+        val start = dateToEpoch(startDate)
+        val end = dateToEpoch(endDate)
         return transactions.filter {
-            val transactionDate: Date = dateFormat.parse(it.date) ?: return@filter false
-            transactionDate in start..end
+            it.date >= start || it.date <= end
         }
     }
 
@@ -342,10 +317,10 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             when (transaction.type) {
                 Constant.SPENT -> {
-                    val banks = _banksLiveData.filter { it.id == transaction.from }
+                    val banks = _banks.filter { it.id == transaction.from }
                     val fromBank = banks[0]
                     val fromBalance = fromBank.balance.toDouble()
-                    val fromNewBalance = fromBalance + transaction.amount.toDouble()
+                    val fromNewBalance = fromBalance + transaction.amount
                     fromBank.balance = fromNewBalance.toString()
                     repository.upsertAccount(fromBank)
                     repository.deleteTransaction(transaction)
@@ -353,14 +328,14 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 Constant.BANK_TO_BANK -> {
-                    val banksFrom = _banksLiveData.filter { it.id == transaction.from }
-                    val banksTo = _banksLiveData.filter { it.id == transaction.to }
+                    val banksFrom = _banks.filter { it.id == transaction.from }
+                    val banksTo = _banks.filter { it.id == transaction.to }
                     val fromBank = banksFrom[0]
                     val toBank = banksTo[0]
                     val fromBalance = fromBank.balance.toDouble()
                     val toBalance = toBank.balance.toDouble()
-                    val fromNewBalance = fromBalance + transaction.amount.toDouble()
-                    val toNewBalance = toBalance - transaction.amount.toDouble()
+                    val fromNewBalance = fromBalance + transaction.amount
+                    val toNewBalance = toBalance - transaction.amount
                     if (toNewBalance >= 0) {
                         fromBank.balance = fromNewBalance.toString()
                         toBank.balance = toNewBalance.toString()
@@ -374,10 +349,10 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 Constant.ADD_BALANCE_TO_BANK -> {
-                    val banks = _banksLiveData.filter { it.id == transaction.to }
+                    val banks = _banks.filter { it.id == transaction.to }
                     val toBank = banks[0]
                     val toBalance = toBank.balance.toDouble()
-                    val toNewBalance = toBalance - transaction.amount.toDouble()
+                    val toNewBalance = toBalance - transaction.amount
                     if (toNewBalance >= 0) {
                         toBank.balance = toNewBalance.toString()
                         repository.upsertAccount(toBank)
@@ -389,10 +364,10 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 Constant.REDUCE_BALANCE_FROM_BANK -> {
-                    val banks = _banksLiveData.filter { it.id == transaction.from }
+                    val banks = _banks.filter { it.id == transaction.from }
                     val fromBank = banks[0]
                     val fromBalance = fromBank.balance.toDouble()
-                    val fromNewBalance = fromBalance + transaction.amount.toDouble()
+                    val fromNewBalance = fromBalance + transaction.amount
                     fromBank.balance = fromNewBalance.toString()
                     repository.upsertAccount(fromBank)
                     repository.deleteTransaction(transaction)
@@ -400,10 +375,10 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 Constant.ADD_BALANCE_TO_PARTY -> {
-                    val parties = _partiesLiveData.filter { it.id == transaction.to }
+                    val parties = _parties.filter { it.id == transaction.to }
                     val toParty = parties[0]
                     val toBalance = toParty.balance.toDouble()
-                    val toNewBalance = toBalance - transaction.amount.toDouble()
+                    val toNewBalance = toBalance - transaction.amount
                     if (toNewBalance >= 0) {
                         toParty.balance = toNewBalance.toString()
                         repository.upsertParty(toParty)
@@ -415,10 +390,10 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 Constant.REDUCE_BALANCE_FROM_PARTY -> {
-                    val parties = _partiesLiveData.filter { it.id == transaction.from }
+                    val parties = _parties.filter { it.id == transaction.from }
                     val fromParty = parties[0]
                     val fromBalance = fromParty.balance.toDouble()
-                    val fromNewBalance = fromBalance + transaction.amount.toDouble()
+                    val fromNewBalance = fromBalance + transaction.amount
                     fromParty.balance = fromNewBalance.toString()
                     repository.upsertParty(fromParty)
                     repository.deleteTransaction(transaction)
@@ -426,14 +401,14 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 Constant.BANK_TO_PARTY -> {
-                    val banks = _banksLiveData.filter { it.id == transaction.from }
+                    val banks = _banks.filter { it.id == transaction.from }
                     val fromBank = banks[0]
-                    val parties = _partiesLiveData.filter { it.id == transaction.to }
+                    val parties = _parties.filter { it.id == transaction.to }
                     val toParty = parties[0]
                     val fromBalance = fromBank.balance.toDouble()
                     val toBalance = toParty.balance.toDouble()
-                    val fromNewBalance = fromBalance + transaction.amount.toDouble()
-                    val toNewBalance = toBalance - transaction.amount.toDouble()
+                    val fromNewBalance = fromBalance + transaction.amount
+                    val toNewBalance = toBalance - transaction.amount
                     fromBank.balance = fromNewBalance.toString()
                     var isCompleted = false
                     if (toParty.receivable) {
@@ -444,7 +419,7 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
                         }
                     } else {
 //                            kadan adaithal
-                        toParty.balance = (toBalance + transaction.amount.toDouble()).toString()
+                        toParty.balance = (toBalance + transaction.amount).toString()
                         isCompleted = true
                     }
                     if (isCompleted) {
@@ -458,14 +433,14 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 Constant.PARTY_TO_BANK -> {
-                    val parties = _partiesLiveData.filter { it.id == transaction.from }
+                    val parties = _parties.filter { it.id == transaction.from }
                     val fromParty = parties[0]
-                    val banks = _banksLiveData.filter { it.id == transaction.to }
+                    val banks = _banks.filter { it.id == transaction.to }
                     val toBank = banks[0]
                     val fromBalance = fromParty.balance.toDouble()
                     val toBalance = toBank.balance.toDouble()
-                    val fromNewBalance = fromBalance + transaction.amount.toDouble()
-                    val toNewBalance = toBalance - transaction.amount.toDouble()
+                    val fromNewBalance = fromBalance + transaction.amount
+                    val toNewBalance = toBalance - transaction.amount
                     if (toNewBalance >= 0) {
                         toBank.balance = toNewBalance.toString()
                         if (fromParty.receivable) {
@@ -474,7 +449,7 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
                         } else {
 //                        kadan vaanguthal
                             fromParty.balance =
-                                (fromBalance - transaction.amount.toDouble()).toString()
+                                (fromBalance - transaction.amount).toString()
                         }
                         repository.upsertParty(fromParty)
                         repository.upsertAccount(toBank)

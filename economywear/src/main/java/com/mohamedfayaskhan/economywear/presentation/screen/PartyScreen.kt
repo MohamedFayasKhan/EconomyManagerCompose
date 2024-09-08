@@ -24,7 +24,7 @@ import java.util.Locale
 
 @Composable
 fun PartyScreen(viewModel: DataViewModel) {
-    val parties = viewModel.partiesLiveData
+    val parties = viewModel.parties
     ScalingLazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp)

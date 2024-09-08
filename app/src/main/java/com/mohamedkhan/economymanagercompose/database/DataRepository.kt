@@ -9,34 +9,36 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.mohamedkhan.economymanagercompose.constant.Constant
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class DataRepository(private val database: DatabaseReference?) {
 
     fun readTransactions(fetcher: DataFetcher<Transaction>) {
         val transactions = mutableListOf<Transaction>()
-        database?.child(Constant.TRANSACTION_PATH)?.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                for (s in snapshot.children) {
-                    val transaction = s.getValue(Transaction::class.java)
-                    if (transaction != null) {
-                        transactions.add(transaction)
+        database?.child(Constant.TRANSACTION_PATH)
+            ?.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (s in snapshot.children) {
+                        try {
+                            val transaction = s.getValue(Transaction::class.java)
+                            if (transaction != null) {
+                                transactions.add(transaction)
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
                     }
+                    fetcher.getDataFromFireBase(transactions)
                 }
-                fetcher.getDataFromFireBase(transactions)
-            }
 
-            override fun onCancelled(error: DatabaseError) {
-                Log.d("Firebase Error", error.message)
-            }
-        })
+                override fun onCancelled(error: DatabaseError) {
+                    Log.d("Firebase Error", error.message)
+                }
+            })
     }
 
     fun readParties(fetcher: DataFetcher<Party>) {
         val parties = mutableListOf<Party>()
-        database?.child(Constant.PARTY_PATH)?.addValueEventListener(object: ValueEventListener{
+        database?.child(Constant.PARTY_PATH)?.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (s in snapshot.children) {
                     val party = s.getValue(Party::class.java)
@@ -55,12 +57,12 @@ class DataRepository(private val database: DatabaseReference?) {
     }
 
     fun readBanks(fetcher: DataFetcher<Bank>) {
-        database?.child(Constant.ACCOUNT_PATH)?.addValueEventListener(object: ValueEventListener{
+        database?.child(Constant.ACCOUNT_PATH)?.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val banks = mutableListOf<Bank>()
                 for (s in snapshot.children) {
                     val bank = s.getValue(Bank::class.java)
-                    if (bank!= null) {
+                    if (bank != null) {
                         banks.add(bank)
                     }
                 }
@@ -76,7 +78,7 @@ class DataRepository(private val database: DatabaseReference?) {
 
     fun readCategories(fetcher: DataFetcher<Category>) {
         val categories = mutableListOf<Category>()
-        database?.child(Constant.CATEGORY_PATH)?.addValueEventListener(object: ValueEventListener{
+        database?.child(Constant.CATEGORY_PATH)?.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (s in snapshot.children) {
                     val category = s.getValue(Category::class.java)
@@ -98,28 +100,22 @@ class DataRepository(private val database: DatabaseReference?) {
         return database?.push()?.key
     }
 
-    fun getTimestamp(): String {
-        val current = Date()
-        val formatter = SimpleDateFormat(Constant.TIMESTAMP_FORMAT, Locale.getDefault())
-        return formatter.format(current)
-    }
-
     fun addTransaction(
         context: Context,
         transaction: Transaction,
-        partiesLiveData: SnapshotStateList<Party>,
-        bankLiveData: SnapshotStateList<Bank>,
+        parties: SnapshotStateList<Party>,
+        banks: SnapshotStateList<Bank>,
         isLoan: Boolean,
         isTransactionCompleted: (Boolean) -> Unit
     ) {
         when (transaction.type) {
             Constant.SPENT -> {
-                val banks = bankLiveData.filter {
+                val fromBanks = banks.filter {
                     transaction.from == it.id
                 }
-                val bank = banks[0]
+                val bank = fromBanks[0]
                 val oldBalance = bank.balance.toDouble()
-                val amount = transaction.amount.toDouble()
+                val amount = transaction.amount
                 val newBalance = oldBalance.minus(amount)
                 bank.balance = newBalance.toString()
                 upsertAccount(bank)
@@ -128,15 +124,15 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
             Constant.BANK_TO_BANK -> {
-                val banks = bankLiveData.filter {
+                val fromBanks = banks.filter {
                     transaction.from == it.id || transaction.to == it.id
                 }
-                val fromBank = banks[0]
-                val toBank = banks[1]
+                val fromBank = fromBanks[0]
+                val toBank = fromBanks[1]
                 val fromOldBalance = fromBank.balance.toDouble()
                 val toOldBalance = toBank.balance.toDouble()
-                val fromNewBalance = fromOldBalance.minus(transaction.amount.toDouble())
-                val toNewBalance = toOldBalance.plus(transaction.amount.toDouble())
+                val fromNewBalance = fromOldBalance.minus(transaction.amount)
+                val toNewBalance = toOldBalance.plus(transaction.amount)
                 if (fromNewBalance >= 0) {
                     fromBank.balance = fromNewBalance.toString()
                     toBank.balance = toNewBalance.toString()
@@ -152,17 +148,17 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
             Constant.BANK_TO_PARTY -> {
-                val bank = bankLiveData.filter {
+                val bank = banks.filter {
                     transaction.from == it.id
                 }
-                val party = partiesLiveData.filter {
+                val party = parties.filter {
                     transaction.to == it.id
                 }
                 val fromBank = bank[0]
                 val toParty = party[0]
                 val fromOldBalance = fromBank.balance.toDouble()
                 val toOldBalance = toParty.balance.toDouble()
-                val amountDouble = transaction.amount.toDouble()
+                val amountDouble = transaction.amount
                 val fromNewBalance = fromOldBalance.minus(amountDouble)
                 if (fromNewBalance >= 0) {
                     if (isLoan) {// kadan kuduthal
@@ -189,7 +185,7 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
 //            Constant.PARTY_TO_PARTY -> {
-//                val parties = partiesLiveData.value?.filter {
+//                val parties = parties.value?.filter {
 //                    transaction.from == it.id || transaction.to == it.id
 //                }
 //                val fromParty = parties?.get(0)
@@ -207,19 +203,19 @@ class DataRepository(private val database: DatabaseReference?) {
 //            }
 
             Constant.PARTY_TO_BANK -> {
-                val party = partiesLiveData.filter {
+                val party = parties.filter {
                     transaction.from == it.id
                 }
-                val bank = bankLiveData.filter {
+                val bank = banks.filter {
                     transaction.to == it.id
                 }
                 val fromParty = party[0]
                 val toBank = bank[0]
                 val fromOldBalance = fromParty.balance.toDouble()
                 val toOldBalance = toBank.balance.toDouble()
-                val amountDouble = transaction.amount.toDouble()
+                val amountDouble = transaction.amount
                 val fromNewBalance = fromOldBalance.minus(amountDouble)
-                if (fromNewBalance >= 0){
+                if (fromNewBalance >= 0) {
                     if (isLoan) {
                         val toNewBalance = toOldBalance.plus(amountDouble)
                         toBank.balance = toNewBalance.toString()
@@ -241,12 +237,12 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
             Constant.ADD_BALANCE_TO_BANK -> {
-                val bank = bankLiveData.filter {
+                val bank = banks.filter {
                     transaction.to == it.id
                 }
                 val toBank = bank[0]
                 val toOldBalance = toBank.balance.toDouble()
-                val amountDouble = transaction.amount.toDouble()
+                val amountDouble = transaction.amount
                 val toNewBalance = toOldBalance.plus(amountDouble)
                 toBank.balance = toNewBalance.toString()
                 upsertAccount(toBank)
@@ -255,12 +251,12 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
             Constant.REDUCE_BALANCE_FROM_BANK -> {
-                val bank = bankLiveData.filter {
+                val bank = banks.filter {
                     transaction.from == it.id
                 }
                 val fromBank = bank[0]
                 val fromOldBalance = fromBank.balance.toDouble()
-                val amountDouble = transaction.amount.toDouble()
+                val amountDouble = transaction.amount
                 val toNewBalance = fromOldBalance.minus(amountDouble)
                 fromBank.balance = toNewBalance.toString()
                 upsertAccount(fromBank)
@@ -269,12 +265,12 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
             Constant.ADD_BALANCE_TO_PARTY -> {
-                val party = partiesLiveData.filter {
+                val party = parties.filter {
                     transaction.to == it.id
                 }
                 val toParty = party[0]
                 val toOldBalance = toParty.balance.toDouble()
-                val amountDouble = transaction.amount.toDouble()
+                val amountDouble = transaction.amount
                 val toNewBalance = toOldBalance.plus(amountDouble)
                 toParty.balance = toNewBalance.toString()
                 upsertParty(toParty)
@@ -283,12 +279,12 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
             Constant.REDUCE_BALANCE_FROM_PARTY -> {
-                val party = partiesLiveData.filter {
+                val party = parties.filter {
                     transaction.from == it.id
                 }
                 val fromParty = party[0]
                 val fromOldBalance = fromParty.balance.toDouble()
-                val amountDouble = transaction.amount.toDouble()
+                val amountDouble = transaction.amount
                 val toNewBalance = fromOldBalance.minus(amountDouble)
                 fromParty.balance = toNewBalance.toString()
                 upsertParty(fromParty)
@@ -313,7 +309,8 @@ class DataRepository(private val database: DatabaseReference?) {
 
     fun upsertCategory(category: String): String {
         val key = database?.child(Constant.CATEGORY_PATH)?.push()?.key
-        database?.child(Constant.CATEGORY_PATH)?.child(key.toString())?.setValue(Category(key.toString(), category))
+        database?.child(Constant.CATEGORY_PATH)?.child(key.toString())
+            ?.setValue(Category(key.toString(), category))
         return key.toString()
     }
 
@@ -340,4 +337,10 @@ class DataRepository(private val database: DatabaseReference?) {
     fun deleteTransaction(transaction: Transaction) {
         database?.child(Constant.TRANSACTION_PATH)?.child(transaction.id)?.removeValue()
     }
+
+//    fun updateTransactionFormat(transactionOld: Transaction, transaction: NewTransaction) {
+//        Log.d("TAG", "updateTransactionFormat: $transactionOld")
+//        Log.d("TAG", "updateTransactionFormat: $transaction")
+//        database?.child(Constant.TRANSACTION_PATH)?.child(transaction.id)?.setValue(transaction)
+//    }
 }

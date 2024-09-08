@@ -20,7 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.Identity
 import com.mohamedkhan.economymanagercompose.route.Router
-import com.mohamedkhan.economymanagercompose.screen.AddTransaction
+import com.mohamedkhan.economymanagercompose.screen.addTransaction.AddTransaction
 import com.mohamedkhan.economymanagercompose.screen.MainScreen
 import com.mohamedkhan.economymanagercompose.screen.SignInScreen
 import com.mohamedkhan.economymanagercompose.screen.SplashScreen
@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
         viewModel = ViewModelProvider(this)[DataViewModel::class.java]
         viewModel.initDatabase(googleAuthClient.getSignedInUser()?.userId)
         setContent {
+
             EconomyManagerComposeTheme {
                 val navController = rememberNavController()
                 NavHost(navController = navController, startDestination = Router.Splash.route) {

@@ -38,16 +38,16 @@ data class Type(
 data class Transaction(
     val id: String,
     var subject: String,
-    val amount: String,
+    val amount: Double,
     val category: String,
-    var date: String,
-    val timeStamp: String,
+    var date: Long,
+    var timeStamp: Long,
     val type: String,
     val from: String,
     val to: String,
     val income: Boolean
 ){
-    constructor(): this(null.toString(),null.toString(),null.toString(),null.toString(),null.toString(),null.toString(),null.toString(),null.toString(),null.toString(),false)
+    constructor(): this(null.toString(),null.toString(),0.0,null.toString(),0,0,null.toString(),null.toString(),null.toString(),false)
 }
 
 data class ToggleSwitch(
