@@ -15,11 +15,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.mohamedkhan.economymanagercompose.screen.BankScreen
 import com.mohamedkhan.economymanagercompose.screen.HomeScreen
-import com.mohamedkhan.economymanagercompose.screen.PartyScreen
 import com.mohamedkhan.economymanagercompose.screen.ProfileScreen
-import com.mohamedkhan.economymanagercompose.screen.TransactionScreen
+import com.mohamedkhan.economymanagercompose.screen.bank.BankScreen
+import com.mohamedkhan.economymanagercompose.screen.party.PartyScreen
+import com.mohamedkhan.economymanagercompose.screen.transaction.TransactionScreen
 import com.mohamedkhan.economymanagercompose.signin.GoogleAuthClient
 import com.mohamedkhan.economymanagercompose.viewModel.DataViewModel
 

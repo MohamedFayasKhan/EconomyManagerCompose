@@ -35,7 +35,7 @@ fun MainScreen(
 ) {
 
     val context = LocalContext.current
-    val totalBalance = viewModel.totalLiveData
+    val totalBalance = viewModel.totalBankBalance
     val items = listOf(
         "bank",
         "parties",

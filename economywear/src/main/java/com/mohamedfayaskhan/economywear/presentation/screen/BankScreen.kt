@@ -21,7 +21,7 @@ import java.util.Locale
 
 @Composable
 fun BankScreen(viewModel: DataViewModel) {
-    val banks = viewModel.bankLiveData
+    val banks = viewModel.banks
     ScalingLazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp)

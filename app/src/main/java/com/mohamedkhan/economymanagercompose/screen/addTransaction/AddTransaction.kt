@@ -1,7 +1,6 @@
-package com.mohamedkhan.economymanagercompose.screen
+package com.mohamedkhan.economymanagercompose.screen.addTransaction
 
 import android.app.DatePickerDialog
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,17 +26,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.mohamedkhan.economymanagercompose.constant.Constant
 import com.mohamedkhan.economymanagercompose.database.Bank
@@ -52,31 +47,9 @@ import java.util.Calendar
 import java.util.Locale
 
 @Composable
-fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
-    val date = remember { mutableStateOf(value = "") }
-    val subject = remember { mutableStateOf(value = "") }
-    val amount = remember { mutableStateOf(value = "") }
-    val type = remember { mutableStateOf(value = "") }
-    val typeValue = remember { mutableStateOf(value = "") }
-    var expandedType by remember { mutableStateOf(false) }
-    val category = remember { mutableStateOf(value = "") }
-    val categoryValue = remember { mutableStateOf(value = "") }
-    val newCategoryValue = remember { mutableStateOf(value = "") }
-    var expandedCategory by remember { mutableStateOf(false) }
-    val from = remember { mutableStateOf(value = "") }
-    val fromValue = remember { mutableStateOf(value = "") }
-    var expandedFrom by remember { mutableStateOf(false) }
-    val to = remember { mutableStateOf(value = "") }
-    val toValue = remember { mutableStateOf(value = "") }
-    var expandedTo by remember { mutableStateOf(false) }
-    val isTypeUpdated = remember { mutableStateOf(false) }
-    var loanSwitch by remember {
-        mutableStateOf(
-            value = ToggleSwitch("Give Loan", false)
-        )
-    }
-    val isAddCategory = remember { mutableStateOf(false) }
+fun AddTransaction(dataViewModel: DataViewModel, navController: NavHostController) {
     val context = LocalContext.current
+    val addViewModel = viewModel<AddTransactionViewModel>()
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(
@@ -85,97 +58,97 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
                 .fillMaxSize()
                 .padding(10.dp)
         ) {
-            TextFieldDate(date)
-            TextFieldSubject(subject)
-            TextFieldAmount(amount)
+            TextFieldDate(addViewModel.date, addViewModel)
+            TextFieldSubject(addViewModel.subject, addViewModel)
+            TextFieldAmount(addViewModel.amount, addViewModel)
             DropDownCategory(
-                expandedCategory,
-                category,
-                categoryValue,
-                viewModel.categoryLiveData,
+                addViewModel.expandedCategory,
+                addViewModel.categoryValue,
+                dataViewModel.categories,
                 "Category",
                 "Category",
-                onExpandedChange = { expandedCategory = !expandedCategory }) { typeVal, isAdd ->
-                isAddCategory.value = isAdd != null
+                addViewModel,
+                onExpandedChange = { addViewModel.onEvent(Event.OnExpandedCategory) }) { _, isAdd ->
+                addViewModel.onEvent(Event.OnAddCategoryChange(isAdd != null))
             }
 
-            if (isAddCategory.value) {
-                TextFieldAddCategory(category = newCategoryValue)
+            if (addViewModel.isAddCategory) {
+                TextFieldAddCategory(category = addViewModel.newCategoryValue, addViewModel)
             } else {
-                newCategoryValue.value = ""
+                addViewModel.onEvent(Event.OnNewCategoryChange(""))
             }
 
             DropDownCategory(
-                expandedType,
-                type,
-                typeValue,
-                viewModel.typeLiveData,
+                addViewModel.expandedType,
+                addViewModel.typeValue,
+                dataViewModel.types,
                 "Type",
                 "Type",
-                onExpandedChange = { expandedType = !expandedType }) { typeVal, isAdd ->
+                addViewModel,
+                onExpandedChange = { addViewModel.onEvent(Event.OnExpandedType) }) { typeVal, _ ->
                 if (typeVal != null) {
-                    type.value = typeVal
-                    isTypeUpdated.value = true
+                    addViewModel.onEvent(Event.OnTypeChange(typeVal))
+                    addViewModel.onEvent(Event.OnTypeUpdate(true))
                 }
             }
 
-            if (isTypeUpdated.value) {
-                from.value = ""
-                to.value = ""
-                fromValue.value = ""
-                toValue.value = ""
-                isTypeUpdated.value = false
+            if (addViewModel.isTypeUpdated) {
+                addViewModel.onEvent(Event.OnFromChange(""))
+                addViewModel.onEvent(Event.OnToChange(""))
+                addViewModel.onEvent(Event.OnFromValueChange(""))
+                addViewModel.onEvent(Event.OnToValueChange(""))
+                addViewModel.onEvent(Event.OnTypeUpdate(false))
             }
 
-            when (type.value) {
+            when (addViewModel.type) {
                 Constant.SPENT -> {
                     DropDownCategory(
-                        expandedFrom,
-                        from,
-                        fromValue,
-                        viewModel.bankLiveData,
+                        addViewModel.expandedFrom,
+                        addViewModel.fromValue,
+                        dataViewModel.banks,
                         "Bank",
                         "From",
-                        { expandedFrom = !expandedFrom }) { typeVal, isAdd -> }
-                    to.value = Constant.SPENT
+                        addViewModel,
+                        onExpandedChange = { addViewModel.onEvent(Event.OnExpandedFrom) }) { _, _ -> }
+                    addViewModel.onEvent(Event.OnToChange(Constant.SPENT))
                 }
 
                 Constant.BANK_TO_BANK -> {
                     DropDownCategory(
-                        expandedFrom,
-                        from,
-                        fromValue,
-                        viewModel.bankLiveData,
+                        addViewModel.expandedFrom,
+                        addViewModel.fromValue,
+                        dataViewModel.banks,
                         "Bank",
                         "From",
-                        { expandedFrom = !expandedFrom }) { typeVal, isAdd -> }
+                        addViewModel,
+                        onExpandedChange = { addViewModel.onEvent(Event.OnExpandedFrom) }) { _, _ -> }
                     DropDownCategory(
-                        expandedTo,
-                        to,
-                        toValue,
-                        viewModel.bankLiveData,
+                        addViewModel.expandedTo,
+                        addViewModel.toValue,
+                        dataViewModel.banks,
                         "Bank",
                         "To",
-                        { expandedTo = !expandedTo }) { typeVal, isAdd -> }
+                        addViewModel,
+                        onExpandedChange = { addViewModel.onEvent(Event.OnExpandedTo) }) { _, _ -> }
                 }
 
                 Constant.BANK_TO_PARTY -> {
                     DropDownCategory(
-                        expandedFrom,
-                        from,
-                        fromValue,
-                        viewModel.bankLiveData,
+                        addViewModel.expandedFrom,
+                        addViewModel.fromValue,
+                        dataViewModel.banks,
                         "Bank",
                         "From",
-                        { expandedFrom = !expandedFrom }) { typeVal, isAdd -> }
+                        addViewModel,
+                        onExpandedChange = { addViewModel.onEvent(Event.OnExpandedFrom) }) { _, _ -> }
                     DropDownCategory(
-                        expandedTo,
-                        to,
-                        toValue,
-                        viewModel.partiesLiveData,
+                        addViewModel.expandedTo,
+                        addViewModel.toValue,
+                        dataViewModel.parties,
                         "Party",
                         "To",
-                        { expandedTo = !expandedTo }) { typeVal, isAdd -> }
+                        addViewModel,
+                        onExpandedChange = { addViewModel.onEvent(Event.OnExpandedTo) }) { _, _ -> }
                 }
 
 //                Constant.PARTY_TO_PARTY -> {
@@ -183,7 +156,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
 //                        expandedFrom,
 //                        from,
 //                        fromValue,
-//                        viewModel.partiesLiveData,
+//                        viewModel.parties,
 //                        "Party",
 //                        "From",
 //                        { expandedFrom = !expandedFrom }) {typeVal, isAdd ->}
@@ -191,7 +164,7 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
 //                        expandedTo,
 //                        to,
 //                        toValue,
-//                        viewModel.partiesLiveData,
+//                        viewModel.parties,
 //                        "Party",
 //                        "To",
 //                        { expandedTo = !expandedTo }) {typeVal, isAdd ->}
@@ -199,69 +172,69 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
 
                 Constant.PARTY_TO_BANK -> {
                     DropDownCategory(
-                        expandedFrom,
-                        from,
-                        fromValue,
-                        viewModel.partiesLiveData,
+                        addViewModel.expandedFrom,
+                        addViewModel.fromValue,
+                        dataViewModel.parties,
                         "Party",
                         "From",
-                        { expandedFrom = !expandedFrom }) { typeVal, isAdd -> }
+                        addViewModel,
+                        onExpandedChange = { addViewModel.onEvent(Event.OnExpandedFrom) }) { _, _ -> }
                     DropDownCategory(
-                        expandedTo,
-                        to,
-                        toValue,
-                        viewModel.bankLiveData,
+                        addViewModel.expandedTo,
+                        addViewModel.toValue,
+                        dataViewModel.banks,
                         "Bank",
                         "To",
-                        { expandedTo = !expandedTo }) { typeVal, isAdd -> }
+                        addViewModel,
+                        onExpandedChange = { addViewModel.onEvent(Event.OnExpandedTo) }) { _, _ -> }
                 }
 
                 Constant.ADD_BALANCE_TO_BANK -> {
                     DropDownCategory(
-                        expandedTo,
-                        to,
-                        toValue,
-                        viewModel.bankLiveData,
+                        addViewModel.expandedTo,
+                        addViewModel.toValue,
+                        dataViewModel.banks,
                         "Bank",
                         "To",
-                        { expandedTo = !expandedTo }) { typeVal, isAdd -> }
-                    from.value = Constant.ADJUSTMENT
+                        addViewModel,
+                        onExpandedChange = { addViewModel.onEvent(Event.OnExpandedTo) }) { _, _ -> }
+                    addViewModel.onEvent(Event.OnFromChange(Constant.ADJUSTMENT))
                 }
 
                 Constant.REDUCE_BALANCE_FROM_BANK -> {
                     DropDownCategory(
-                        expandedFrom,
-                        from,
-                        fromValue,
-                        viewModel.bankLiveData,
+                        addViewModel.expandedFrom,
+                        addViewModel.fromValue,
+                        dataViewModel.banks,
                         "Bank",
                         "From",
-                        { expandedFrom = !expandedFrom }) { typeVal, isAdd -> }
-                    to.value = Constant.ADJUSTMENT
+                        addViewModel,
+                        onExpandedChange = { addViewModel.onEvent(Event.OnExpandedFrom) }) { _, _ -> }
+                    addViewModel.onEvent(Event.OnToChange(Constant.ADJUSTMENT))
                 }
 
                 Constant.ADD_BALANCE_TO_PARTY -> {
                     DropDownCategory(
-                        expandedTo,
-                        to,
-                        toValue,
-                        viewModel.partiesLiveData,
+                        addViewModel.expandedTo,
+                        addViewModel.toValue,
+                        dataViewModel.parties,
                         "Party",
                         "To",
-                        { expandedTo = !expandedTo }) { typeVal, isAdd -> }
-                    from.value = Constant.ADJUSTMENT
+                        addViewModel,
+                        onExpandedChange = { addViewModel.onEvent(Event.OnExpandedTo) }) { _, _ -> }
+                    addViewModel.onEvent(Event.OnFromChange(Constant.ADJUSTMENT))
                 }
 
                 Constant.REDUCE_BALANCE_FROM_PARTY -> {
                     DropDownCategory(
-                        expandedFrom,
-                        from,
-                        fromValue,
-                        viewModel.partiesLiveData,
+                        addViewModel.expandedFrom,
+                        addViewModel.fromValue,
+                        dataViewModel.parties,
                         "Party",
                         "From",
-                        { expandedFrom = !expandedFrom }) { typeVal, isAdd -> }
-                    to.value = Constant.ADJUSTMENT
+                        addViewModel,
+                        onExpandedChange = { addViewModel.onEvent(Event.OnExpandedFrom) }) { _, _ -> }
+                    addViewModel.onEvent(Event.OnToChange(Constant.ADJUSTMENT))
                 }
             }
 
@@ -280,35 +253,30 @@ fun AddTransaction(viewModel: DataViewModel, navController: NavHostController) {
 //                    }
 //                )
 //            }
-            LoanSwitch(loanSwitch = loanSwitch) {
-                loanSwitch = it
+            LoanSwitch(loanSwitch = addViewModel.loanSwitch) {
+                addViewModel.onEvent(Event.OnLoanSwitchValueChange(it))
             }
 
             AddButton(
-                date,
-                subject,
-                amount,
-                category,
-                type,
-                from,
-                to,
-                viewModel,
-                loanSwitch,
-                newCategoryValue.value
+                addViewModel,
+                addViewModel.date,
+                addViewModel.subject,
+                addViewModel.amount,
+                addViewModel.category,
+                addViewModel.type,
+                addViewModel.from,
+                addViewModel.to,
+                dataViewModel,
+                addViewModel.loanSwitch,
+                addViewModel.newCategoryValue
             ) {
-                if (it) {
-                    navController.popBackStack()
-                } else {
-                    Toast.makeText(context, "Fill all details", Toast.LENGTH_LONG).show()
-                }
+                addViewModel.onEvent(Event.OnAddEventClick(it, navController, context))
             }
-//            DropDownCategory(isTypeUpdated, expandedFrom, from, fromValue, viewModel.bankLiveData, "Bank", "From", onExpandedChange = { expandedFrom = !expandedFrom })
-//            DropDownCategory(expandedTo, to, toValue, viewModel.partiesLiveData, "Party", "To", onExpandedChange = { expandedTo = !expandedTo })
+//            DropDownCategory(isTypeUpdated, expandedFrom, from, fromValue, viewModel.banks, "Bank", "From", onExpandedChange = { expandedFrom = !expandedFrom })
+//            DropDownCategory(expandedTo, to, toValue, viewModel.parties, "Party", "To", onExpandedChange = { expandedTo = !expandedTo })
         }
     }
 }
-
-private fun validate(value: MutableState<String>): Boolean = value.value != ""
 
 @Composable
 fun LoanSwitch(loanSwitch: ToggleSwitch, onSwitchChanged: (ToggleSwitch) -> Unit) {
@@ -339,13 +307,14 @@ fun LoanSwitch(loanSwitch: ToggleSwitch, onSwitchChanged: (ToggleSwitch) -> Unit
 
 @Composable
 fun AddButton(
-    date: MutableState<String>,
-    subject: MutableState<String>,
-    amount: MutableState<String>,
-    category: MutableState<String>,
-    type: MutableState<String>,
-    from: MutableState<String>,
-    to: MutableState<String>,
+    addViewModel: AddTransactionViewModel,
+    date: String,
+    subject: String,
+    amount: String,
+    category: String,
+    type: String,
+    from: String,
+    to: String,
     viewModel: DataViewModel,
     loanSwitch: ToggleSwitch,
     newCategory: String,
@@ -355,23 +324,27 @@ fun AddButton(
     Button(
         modifier = Modifier.fillMaxWidth(),
         onClick = {
-            if (validate(date) && validate(subject) && validate(amount) && validate(category) && validate(type) && validate(from) && validate(to)) {
-                if (newCategory != "") {
-                    category.value = viewModel.addCategory(newCategory)
-                }
+            if (addViewModel.validate(date) && addViewModel.validate(subject) && addViewModel.validate(amount) && addViewModel.validate(category) && addViewModel.validate(type) && addViewModel.validate(from) && addViewModel.validate(to)) {
+//                if (newCategory != "") {
+//                    addViewModel.onEvent(Event.OnCategoryChange(viewModel.addCategory(newCategory)))
+//                }
                 var isCompleted = false
-                when (type.value) {
+                when (type) {
                     Constant.SPENT -> {
                         val transaction = Transaction(
                             viewModel.getUniqueDatabaseId().toString(),
-                            subject.value,
-                            amount.value,
-                            category.value,
-                            date.value,
-                            viewModel.getTimestamp(),
-                            type.value,
-                            from.value,
-                            to.value,
+                            subject,
+                            amount.toDouble(),
+                            if (newCategory != "") {
+                                viewModel.addCategory(newCategory)
+                            } else {
+                                category
+                            },
+                            viewModel.dateToEpoch(date),
+                            viewModel.timeStampToEpoch(),
+                            type,
+                            from,
+                            to,
                             false
                         )
                         viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
@@ -382,14 +355,18 @@ fun AddButton(
                     Constant.BANK_TO_BANK -> {
                         val transaction = Transaction(
                             viewModel.getUniqueDatabaseId().toString(),
-                            subject.value,
-                            amount.value,
-                            category.value,
-                            date.value,
-                            viewModel.getTimestamp(),
-                            type.value,
-                            from.value,
-                            to.value,
+                            subject,
+                            amount.toDouble(),
+                            if (newCategory != "") {
+                                viewModel.addCategory(newCategory)
+                            } else {
+                                category
+                            },
+                            viewModel.dateToEpoch(date),
+                            viewModel.timeStampToEpoch(),
+                            type,
+                            from,
+                            to,
                             false
                         )
                         viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
@@ -400,14 +377,18 @@ fun AddButton(
                     Constant.ADD_BALANCE_TO_BANK -> {
                         val transaction = Transaction(
                             viewModel.getUniqueDatabaseId().toString(),
-                            subject.value,
-                            amount.value,
-                            category.value,
-                            date.value,
-                            viewModel.getTimestamp(),
-                            type.value,
-                            from.value,
-                            to.value,
+                            subject,
+                            amount.toDouble(),
+                            if (newCategory != "") {
+                                viewModel.addCategory(newCategory)
+                            } else {
+                                category
+                            },
+                            viewModel.dateToEpoch(date),
+                            viewModel.timeStampToEpoch(),
+                            type,
+                            from,
+                            to,
                             true
                         )
                         viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
@@ -418,14 +399,18 @@ fun AddButton(
                     Constant.REDUCE_BALANCE_FROM_BANK -> {
                         val transaction = Transaction(
                             viewModel.getUniqueDatabaseId().toString(),
-                            subject.value,
-                            amount.value,
-                            category.value,
-                            date.value,
-                            viewModel.getTimestamp(),
-                            type.value,
-                            from.value,
-                            to.value,
+                            subject,
+                            amount.toDouble(),
+                            if (newCategory != "") {
+                                viewModel.addCategory(newCategory)
+                            } else {
+                                category
+                            },
+                            viewModel.dateToEpoch(date),
+                            viewModel.timeStampToEpoch(),
+                            type,
+                            from,
+                            to,
                             false
                         )
                         viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
@@ -436,14 +421,18 @@ fun AddButton(
                     Constant.BANK_TO_PARTY -> {
                         val transaction = Transaction(
                             viewModel.getUniqueDatabaseId().toString(),
-                            subject.value,
-                            amount.value,
-                            category.value,
-                            date.value,
-                            viewModel.getTimestamp(),
-                            type.value,
-                            from.value,
-                            to.value,
+                            subject,
+                            amount.toDouble(),
+                            if (newCategory != "") {
+                                viewModel.addCategory(newCategory)
+                            } else {
+                                category
+                            },
+                            viewModel.dateToEpoch(date),
+                            viewModel.timeStampToEpoch(),
+                            type,
+                            from,
+                            to,
                             false
                         )
                         viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
@@ -458,14 +447,18 @@ fun AddButton(
                     Constant.PARTY_TO_BANK -> {
                         val transaction = Transaction(
                             viewModel.getUniqueDatabaseId().toString(),
-                            subject.value,
-                            amount.value,
-                            category.value,
-                            date.value,
-                            viewModel.getTimestamp(),
-                            type.value,
-                            from.value,
-                            to.value,
+                            subject,
+                            amount.toDouble(),
+                            if (newCategory != "") {
+                                viewModel.addCategory(newCategory)
+                            } else {
+                                category
+                            },
+                            viewModel.dateToEpoch(date),
+                            viewModel.timeStampToEpoch(),
+                            type,
+                            from,
+                            to,
                             true
                         )
                         viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
@@ -476,14 +469,18 @@ fun AddButton(
                     Constant.ADD_BALANCE_TO_PARTY -> {
                         val transaction = Transaction(
                             viewModel.getUniqueDatabaseId().toString(),
-                            subject.value,
-                            amount.value,
-                            category.value,
-                            date.value,
-                            viewModel.getTimestamp(),
-                            type.value,
-                            from.value,
-                            to.value,
+                            subject,
+                            amount.toDouble(),
+                            if (newCategory != "") {
+                                viewModel.addCategory(newCategory)
+                            } else {
+                                category
+                            },
+                            viewModel.dateToEpoch(date),
+                            viewModel.timeStampToEpoch(),
+                            type,
+                            from,
+                            to,
                             loanSwitch.isChecked
                         )
                         viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
@@ -494,14 +491,18 @@ fun AddButton(
                     Constant.REDUCE_BALANCE_FROM_PARTY -> {
                         val transaction = Transaction(
                             viewModel.getUniqueDatabaseId().toString(),
-                            subject.value,
-                            amount.value,
-                            category.value,
-                            date.value,
-                            viewModel.getTimestamp(),
-                            type.value,
-                            from.value,
-                            to.value,
+                            subject,
+                            amount.toDouble(),
+                            if (newCategory != "") {
+                                viewModel.addCategory(newCategory)
+                            } else {
+                                category
+                            },
+                            viewModel.dateToEpoch(date),
+                            viewModel.timeStampToEpoch(),
+                            type,
+                            from,
+                            to,
                             !loanSwitch.isChecked
                         )
                         viewModel.addTransaction(transaction, context, loanSwitch.isChecked) {
@@ -522,11 +523,11 @@ fun AddButton(
 @Composable
 private fun <T> DropDownCategory(
     expanded: Boolean,
-    id: MutableState<String>,
-    value: MutableState<String>,
+    value: String,
     liveData: SnapshotStateList<T>,
     type: String,
     label: String,
+    addViewModel: AddTransactionViewModel,
     onExpandedChange: (Boolean) -> Unit,
     onOptionChange: (String?, String?) -> Unit
 ) {
@@ -538,9 +539,9 @@ private fun <T> DropDownCategory(
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor(),
-            value = value.value,
+            value = value,
             onValueChange = {
-                value.value = it
+                addViewModel.onEvent(Event.OnDropdownCategoryChange(type, label,  it))
             },
             readOnly = true,
             label = {
@@ -563,14 +564,7 @@ private fun <T> DropDownCategory(
                             modifier = Modifier.fillMaxWidth(),
                             text = { Text(text = it.name) },
                             onClick = {
-                                onExpandedChange(false)
-                                value.value = it.name
-                                id.value = it.id
-                                if (it.id == Constant.ADD_CATEGORY) {
-                                    onOptionChange(null, id.value)
-                                } else {
-                                    onOptionChange(null, null)
-                                }
+                                addViewModel.onEvent(Event.OnCategoryDropdownClicked(it = it, onOptionChange = onOptionChange, onExpandedChange = onExpandedChange))
                             },
                             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                         )
@@ -582,10 +576,7 @@ private fun <T> DropDownCategory(
                             modifier = Modifier.fillMaxWidth(),
                             text = { Text(text = it.name) },
                             onClick = {
-                                onExpandedChange(false)
-                                value.value = it.name + " - " + it.balance
-                                id.value = it.id
-
+                                addViewModel.onEvent(Event.OnBankDropdownClicked(label = label, it = it, onExpandedChange = onExpandedChange))
                             },
                             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                         )
@@ -597,10 +588,7 @@ private fun <T> DropDownCategory(
                             modifier = Modifier.fillMaxWidth(),
                             text = { Text(text = it.name) },
                             onClick = {
-                                onExpandedChange(false)
-                                value.value = it.name + " - " + it.balance
-                                id.value = it.id
-
+                                addViewModel.onEvent(Event.OnPartyDropdownClicked(label = label, it = it, onExpandedChange = onExpandedChange))
                             },
                             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                         )
@@ -612,10 +600,7 @@ private fun <T> DropDownCategory(
                             modifier = Modifier.fillMaxWidth(),
                             text = { Text(text = it.name) },
                             onClick = {
-                                onExpandedChange(false)
-                                value.value = it.name
-                                id.value = it.id
-                                onOptionChange(it.id, null)
+                                addViewModel.onEvent(Event.OnTypeDropdownClicked(it = it, onExpandedChange = onExpandedChange, onOptionChange = onOptionChange))
                             },
                             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                         )
@@ -627,12 +612,12 @@ private fun <T> DropDownCategory(
 }
 
 @Composable
-fun TextFieldAmount(amount: MutableState<String>) {
+fun TextFieldAmount(amount: String, addViewModel: AddTransactionViewModel) {
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth(),
-        value = amount.value,
+        value = amount,
         onValueChange = {
-            amount.value = it
+            addViewModel.onEvent(Event.OnAmountChange(it))
         },
         label = {
             Text(text = "Amount")
@@ -642,7 +627,7 @@ fun TextFieldAmount(amount: MutableState<String>) {
                 imageVector = Icons.Filled.Clear,
                 contentDescription = "Clear",
                 modifier = Modifier.clickable {
-                    amount.value = ""
+                    addViewModel.onEvent(Event.OnAmountChange(""))
                 }
             )
         },
@@ -651,12 +636,12 @@ fun TextFieldAmount(amount: MutableState<String>) {
 }
 
 @Composable
-fun TextFieldSubject(subject: MutableState<String>) {
+private fun TextFieldSubject(subject: String, addViewModel: AddTransactionViewModel) {
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth(),
-        value = subject.value,
+        value = subject,
         onValueChange = {
-            subject.value = it
+            addViewModel.onEvent(Event.OnSubjectChange(it))
         },
         label = {
             Text(text = "Subject")
@@ -666,7 +651,7 @@ fun TextFieldSubject(subject: MutableState<String>) {
                 imageVector = Icons.Filled.Clear,
                 contentDescription = "Clear",
                 modifier = Modifier.clickable {
-                    subject.value = ""
+                    addViewModel.onEvent(Event.OnSubjectChange(""))
                 }
             )
         }
@@ -674,12 +659,12 @@ fun TextFieldSubject(subject: MutableState<String>) {
 }
 
 @Composable
-fun TextFieldAddCategory(category: MutableState<String>) {
+fun TextFieldAddCategory(category: String, addViewModel: AddTransactionViewModel) {
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth(),
-        value = category.value,
+        value = category,
         onValueChange = {
-            category.value = it
+            addViewModel.onEvent(Event.OnNewCategoryChange(it))
         },
         label = {
             Text(text = "Add Category")
@@ -689,7 +674,7 @@ fun TextFieldAddCategory(category: MutableState<String>) {
                 imageVector = Icons.Filled.Clear,
                 contentDescription = "Clear",
                 modifier = Modifier.clickable {
-                    category.value = ""
+                    addViewModel.onEvent(Event.OnNewCategoryChange(""))
                 }
             )
         }
@@ -697,7 +682,7 @@ fun TextFieldAddCategory(category: MutableState<String>) {
 }
 
 @Composable
-fun TextFieldDate(date: MutableState<String>) {
+fun TextFieldDate(date: String, addViewModel: AddTransactionViewModel) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
     val dateFormat = SimpleDateFormat(Constant.DATE_FORMAT, Locale.getDefault())
@@ -705,7 +690,7 @@ fun TextFieldDate(date: MutableState<String>) {
         context,
         { _, year, month, dayOfMonth ->
             calendar.set(year, month, dayOfMonth)
-            date.value = dateFormat.format(calendar.time)
+            addViewModel.onEvent(Event.OnDateChange(dateFormat.format(calendar.time)))
         },
         calendar.get(Calendar.YEAR),
         calendar.get(Calendar.MONTH),
@@ -713,9 +698,9 @@ fun TextFieldDate(date: MutableState<String>) {
     )
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth(),
-        value = date.value,
+        value = date,
         onValueChange = {
-            date.value = it
+            addViewModel.onEvent(Event.OnDateChange(it))
         },
         label = {
             Text(text = "Date")

@@ -20,31 +20,31 @@ sealed class Screen(
     var route: String
 ) {
 
-    object HomeScreen: Screen(
+    data object HomeScreen: Screen(
         title = "Home",
         selectedIcon = Icons.Filled.Home,
         unSelectedIcon = Icons.Outlined.Home,
         route = "home"
     )
-    object TransactionScreen: Screen(
+    data object TransactionScreen: Screen(
         title = "Cashbook",
         selectedIcon = Icons.Filled.List,
         unSelectedIcon = Icons.Outlined.List,
         route = "cashbook"
     )
-    object BankScreen: Screen(
+    data object BankScreen: Screen(
         title = "Bank",
         selectedIcon = Icons.Filled.ShoppingCart,
         unSelectedIcon = Icons.Outlined.ShoppingCart,
         route = "bank"
     )
-    object PartyScreen: Screen(
+    data object PartyScreen: Screen(
         title = "Party",
         selectedIcon = Icons.Filled.AccountCircle,
         unSelectedIcon = Icons.Outlined.AccountCircle,
         route = "party"
     )
-    object ProfileScreen: Screen(
+    data object ProfileScreen: Screen(
         title = "Profile",
         selectedIcon = Icons.Filled.Face,
         unSelectedIcon = Icons.Outlined.Face,

@@ -110,14 +110,14 @@ class DataRepository(private val database: DatabaseReference?) {
     fun addTransaction(
         context: Context,
         transaction: Transaction,
-        partiesLiveData: SnapshotStateList<Party>,
-        bankLiveData: SnapshotStateList<Bank>,
+        parties: SnapshotStateList<Party>,
+        banks: SnapshotStateList<Bank>,
         isLoan: Boolean,
         isTransactionCompleted: (Boolean) -> Unit
     ) {
         when (transaction.type) {
             Constant.SPENT -> {
-                val banks = bankLiveData.filter {
+                val banks = banks.filter {
                     transaction.from == it.id
                 }
                 val bank = banks[0]
@@ -131,7 +131,7 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
             Constant.BANK_TO_BANK -> {
-                val banks = bankLiveData.filter {
+                val banks = banks.filter {
                     transaction.from == it.id || transaction.to == it.id
                 }
                 val fromBank = banks[0]
@@ -155,10 +155,10 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
             Constant.BANK_TO_PARTY -> {
-                val bank = bankLiveData.filter {
+                val bank = banks.filter {
                     transaction.from == it.id
                 }
-                val party = partiesLiveData.filter {
+                val party = parties.filter {
                     transaction.to == it.id
                 }
                 val fromBank = bank[0]
@@ -192,7 +192,7 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
 //            Constant.PARTY_TO_PARTY -> {
-//                val parties = partiesLiveData.value?.filter {
+//                val parties = parties.value?.filter {
 //                    transaction.from == it.id || transaction.to == it.id
 //                }
 //                val fromParty = parties?.get(0)
@@ -210,10 +210,10 @@ class DataRepository(private val database: DatabaseReference?) {
 //            }
 
             Constant.PARTY_TO_BANK -> {
-                val party = partiesLiveData.filter {
+                val party = parties.filter {
                     transaction.from == it.id
                 }
-                val bank = bankLiveData.filter {
+                val bank = banks.filter {
                     transaction.to == it.id
                 }
                 val fromParty = party[0]
@@ -244,7 +244,7 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
             Constant.ADD_BALANCE_TO_BANK -> {
-                val bank = bankLiveData.filter {
+                val bank = banks.filter {
                     transaction.to == it.id
                 }
                 val toBank = bank[0]
@@ -258,7 +258,7 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
             Constant.REDUCE_BALANCE_FROM_BANK -> {
-                val bank = bankLiveData.filter {
+                val bank = banks.filter {
                     transaction.from == it.id
                 }
                 val fromBank = bank[0]
@@ -272,7 +272,7 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
             Constant.ADD_BALANCE_TO_PARTY -> {
-                val party = partiesLiveData.filter {
+                val party = parties.filter {
                     transaction.to == it.id
                 }
                 val toParty = party[0]
@@ -286,7 +286,7 @@ class DataRepository(private val database: DatabaseReference?) {
             }
 
             Constant.REDUCE_BALANCE_FROM_PARTY -> {
-                val party = partiesLiveData.filter {
+                val party = parties.filter {
                     transaction.from == it.id
                 }
                 val fromParty = party[0]

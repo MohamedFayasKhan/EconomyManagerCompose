@@ -22,7 +22,7 @@ import java.util.Locale
 
 @Composable
 fun TransactionScreen(viewModel: DataViewModel) {
-    val transactions = viewModel.transactionLiveData
+    val transactions = viewModel.transactions
     ScalingLazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp)
